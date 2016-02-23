@@ -30,14 +30,14 @@ namespace non_std
 class file
 {
 public:
-    enum Type {
-        PIPE,
-        CHARACTER_DEVICE,
-        DIRECTORY,
-        BLOCK_DEVICE,
-        REGULAR,
-        SYMLINK,
-        SOCKET,
+    enum filetype {
+        pipe,
+        character_device,
+        directory,
+        block_device,
+        regular,
+        symlink,
+        socket,
     };
 
     file ( std::string fullname ) {
@@ -70,7 +70,7 @@ public:
 #endif
 
         m_mode = st.st_mode & 07777;
-        m_type = static_cast<Type> ( st.st_mode >> 13 );
+        m_type = static_cast<filetype> ( st.st_mode >> 13 );
     }
 
     const std::string& name() const { return m_name; }
@@ -78,14 +78,14 @@ public:
     std::string fullname() const { return path() + "/" + name(); }
 
     std::uint16_t mode() const { return m_mode; }
-    Type type() const { return m_type; }
+    filetype type() const { return m_type; }
 
 private:
     std::string m_name;
     std::string m_path;
 
     std::uint16_t m_mode;
-    Type m_type;
+    filetype m_type;
 
 };
 }
