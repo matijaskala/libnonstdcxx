@@ -1,0 +1,81 @@
+/*
+ * This file is part of MLib
+ * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef NON_STD_BUFFERED_IFSTREAM
+#define NON_STD_BUFFERED_IFSTREAM
+
+#include <fstream>
+
+namespace non_std
+{
+
+template< typename _CharT, typename _Traits = std::char_traits<_CharT> >
+class basic_buffered_ifstream;
+
+using buffered_ifstream = basic_buffered_ifstream<char>;
+
+template< typename _CharT, typename _Traits >
+class basic_buffered_ifstream
+{
+public:
+    basic_buffered_ifstream ( std::string file )
+        : _M_stream ( file ) {
+    }
+
+    typename _Traits::int_type get() {
+        _M_fill_buffer();
+        if ( _M_eof )
+            return _Traits::eof();
+        else
+            return _Traits::to_int_type ( _M_buffer[_M_offset++] );
+    }
+
+    typename _Traits::int_type peek() {
+        _M_fill_buffer();
+        if ( _M_eof )
+            return _Traits::eof();
+        else
+            return _Traits::to_int_type ( _M_buffer[_M_offset] );
+    }
+
+    bool is_open() { return _M_stream.is_open(); }
+
+    std::basic_istream<_CharT, _Traits>& stream() { return _M_stream; }
+
+private:
+    std::basic_ifstream<_CharT, _Traits> _M_stream;
+    _CharT _M_buffer[0x800];
+    std::uint32_t _M_buffer_size = 0;
+    std::uint32_t _M_offset = 0;
+    bool _M_eof = false;
+    void _M_fill_buffer() {
+        if ( _M_offset >= _M_buffer_size ) {
+            if ( _M_stream.rdbuf()->sgetc() == _Traits::eof() ) {
+                _M_eof = true;
+            }
+            else {
+                _M_offset = 0;
+                _M_buffer_size = _M_stream.readsome ( _M_buffer, sizeof ( _M_buffer ) );
+            }
+        }
+    }
+};
+}
+
+#endif // NON_STD_BUFFERED_IFSTREAM

@@ -1,0 +1,106 @@
+/*
+ * This file is part of MLib
+ * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef NON_STD_CASTS
+#define NON_STD_CASTS
+
+#include <sstream>
+#include "typenameid"
+
+namespace non_std
+{
+
+class bad_lexical_cast : public std::bad_cast {
+public:
+    virtual const char* what() const noexcept;
+};
+
+class bad_runtime_cast : public std::bad_cast {
+    std::string _M_msg;
+public:
+    explicit bad_runtime_cast(std::string _Res, std::string _Arg) : _M_msg("runtime_cast<" + _Res + ">(" + _Arg + ")") {}
+    virtual const char* what() const noexcept {
+        return _M_msg.c_str();
+    }
+};
+}
+
+template < typename _Res, typename _Arg >
+inline _Res lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
+    std::stringstream stream;
+    _Res r;
+    if ( !( stream << s ) || !( stream >> r ) || stream.rdbuf()->in_avail() )
+        throw non_std::bad_lexical_cast();
+    return r;
+}
+
+template<>
+std::wstring lexical_cast ( const std::string& s ) throw ( non_std::bad_lexical_cast );
+
+template< typename _Tp > using __is_pointer = std::integral_constant<bool,std::is_pointer<_Tp>::value||std::is_member_pointer<_Tp>::value>;
+template< typename _Tp > using __is_non_void_pointer = std::integral_constant<bool,__is_pointer<_Tp>::value&&!std::is_same<_Tp,void*>::value>;
+
+template< typename _Tp > using __for_pointer = typename std::enable_if<__is_pointer<_Tp>::value,_Tp>::type;
+template< typename _Tp > using __for_arithmetic = typename std::enable_if<std::is_arithmetic<_Tp>::value,_Tp>::type;
+template< typename _Tp > using __for_non_scalar = typename std::enable_if<!std::is_scalar<_Tp>::value,_Tp>::type;
+
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( char s ) { return static_cast<unsigned char> ( s ); }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( unsigned char s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( short int s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( unsigned short int s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( int s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( unsigned int s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( long int s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( unsigned long int s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( long long int s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( unsigned long long int s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( float s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( double s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( long double s ) { return s; }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( void* s ) { return reinterpret_cast<std::uintptr_t> ( s ); }
+template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( std::string s ) { return lexical_cast<_Res> ( s ); }
+
+template< typename _Res > inline __for_pointer< _Res > runtime_cast ( void* s ) { return static_cast<_Res> ( s ); }
+template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::uintptr_t s ) { return reinterpret_cast<_Res> ( s ); }
+template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::string s ) { return runtime_cast<_Res> ( lexical_cast<void*> ( s ) ); }
+template< typename _Res > inline __for_non_scalar< _Res > runtime_cast ( void* s ) { throw non_std::bad_runtime_cast{typename_id<_Res>{}.name(),"void*"}; }
+
+template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value,_Res>::type runtime_cast ( _Arg s )
+{ throw non_std::bad_runtime_cast{typename_id<_Res>{}.name(),typename_id<_Arg>{}.name()}; }
+template< typename _Res, typename _Arg > inline typename std::enable_if<__is_non_void_pointer<_Arg>::value,_Res>::type runtime_cast ( _Arg s )
+{ return runtime_cast<_Res> ( static_cast<void*> ( s ) ); }
+template< typename _Res > inline _Res runtime_cast ( const char* s ) { return runtime_cast<_Res> ( static_cast<std::string> ( s ) ); }
+
+template<> inline std::string runtime_cast<std::string> ( char s ) { return std::string{s}; }
+template<> inline std::string runtime_cast<std::string> ( unsigned char s ) { return std::string{static_cast<char>(s)}; }
+template<> inline std::string runtime_cast<std::string> ( short int s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( unsigned short int s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( int s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( unsigned int s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( long int s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( unsigned long int s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( long long int s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( unsigned long long int s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( float s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( double s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( long double s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( void* s ) { return lexical_cast<std::string> ( s ); }
+template<> inline std::string runtime_cast<std::string> ( std::string s ) { return s; }
+
+#endif // NON_STD_CASTS

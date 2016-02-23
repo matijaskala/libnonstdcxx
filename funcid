@@ -1,0 +1,94 @@
+/*
+ * This file is part of MLib
+ * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef FUNCID
+#define FUNCID
+
+#include <typenameid>
+#include <stdexcept>
+
+template< typename... _Args >
+struct arg_id;
+
+template< typename _FirstArg, typename... _OtherArgs >
+struct arg_id<_FirstArg, _OtherArgs...>
+{
+    std::string operator[] ( int i ) {
+        return i == 0 ? typename_id<_FirstArg>{}.name() : arg_id<_OtherArgs...>()[i - 1];
+    }
+    std::string name() {
+        return typename_id<_FirstArg>{}.name() + "," + arg_id<_OtherArgs...>().name();
+    }
+    constexpr int count() {
+        return 1 + arg_id<_OtherArgs...>::count();
+    }
+};
+
+template< typename _OnlyOneArg >
+struct arg_id<_OnlyOneArg>
+{
+    std::string operator[] ( int i ) {
+        if ( i != 0 )
+            throw std::out_of_range ( "arg_id::operator[]" );
+        return name();
+    }
+    std::string name() {
+        return typename_id<_OnlyOneArg>{}.name();
+    }
+    constexpr int count() {
+        return 1;
+    }
+};
+
+template<>
+struct arg_id<>
+{
+    std::string name() {
+        return "";
+    }
+    constexpr int count() {
+        return 0;
+    }
+};
+
+template< typename _Func >
+struct func_id;
+
+template< typename _ReturnType, typename... _Args >
+struct func_id<_ReturnType(*)(_Args...)> : public func_id<_ReturnType(_Args...)>
+{};
+
+template< typename _ReturnType, typename _Class, typename... _Args >
+struct func_id<_ReturnType(_Class::*)(_Args...)> : public func_id<_ReturnType(_Args...)>
+{};
+
+template< typename _ReturnType, typename... _Args >
+struct func_id<_ReturnType(_Args...)>
+{
+    arg_id<_Args...> args;
+    std::string return_type() {
+        return typename_id<_ReturnType>().name();
+    }
+};
+
+#define funcid(FUNC) func_id<decltype(&FUNC)>{}
+#define func_name(FUNC) (#FUNC + ( "(" + funcid(FUNC).args.name() + ")" ) )
+#define method_name(CLASS,METHOD) (#METHOD + ( "(" + funcid(CLASS::METHOD).args.name() + ")" ) )
+
+#endif // FUNCID

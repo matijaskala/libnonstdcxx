@@ -1,0 +1,63 @@
+/*
+ * This file is part of MLib
+ * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef NON_STD_XTERM
+#define NON_STD_XTERM
+
+#include <string>
+
+namespace non_std
+{
+
+enum color {
+    black,
+    red,
+    green,
+    yellow,
+    blue,
+    magenta,
+    cyan,
+    white,
+    custom,
+    default_color
+};
+
+namespace xterm
+{
+
+[[gnu::visibility("default")]] std::string escape ( const std::string& __s );
+
+template<typename _CharT, typename _Traits>
+  inline std::basic_ostream<_CharT, _Traits>&
+  bold(std::basic_ostream<_CharT, _Traits>& __os)
+  { return __os << escape("1m"); }
+
+[[gnu::visibility("default")]] std::string bgcolor ( color __c );
+[[gnu::visibility("default")]] std::string fgcolor ( color __c );
+
+template<typename _CharT, typename _Traits>
+  inline std::basic_ostream<_CharT, _Traits>&
+  reset(std::basic_ostream<_CharT, _Traits>& __os)
+  { return __os << escape("m"); }
+}
+
+}
+
+#endif // NON_STD_XTERM
+
