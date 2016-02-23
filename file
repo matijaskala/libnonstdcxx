@@ -54,7 +54,7 @@ public:
 
     file ( directory::entry e ) {
 	m_path = e.path();
-	m_name = e.name()
+	m_name = e.name();
 
 	while (m_path.back() == '/')
 	    m_path.pop_back();
