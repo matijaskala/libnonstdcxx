@@ -20,7 +20,7 @@
 #ifndef FUNCID
 #define FUNCID
 
-#include <typenameid>
+#include "typenameid"
 #include <stdexcept>
 
 template< typename... _Args >
