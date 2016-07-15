@@ -82,7 +82,10 @@ template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::strin
 template< typename _Res > inline __for_non_scalar< _Res > runtime_cast ( void* s ) { throw non_std::bad_runtime_cast{typename_id<_Res>{}.name(),"void*"}; }
 
 template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value
- && !std::is_same<_Res,_Arg>::value,_Res>::type runtime_cast ( _Arg s )
+ && !std::is_same<_Res,_Arg>::value && std::is_copy_constructible<_Arg>::value,_Res>::type runtime_cast ( _Arg s )
+{ throw non_std::bad_runtime_cast{typename_id<_Res>{}.name(),typename_id<_Arg>{}.name()}; }
+template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value
+ && !std::is_same<_Res,_Arg>::value && !std::is_copy_constructible<_Arg>::value,_Res>::type runtime_cast ( const _Arg& s )
 { throw non_std::bad_runtime_cast{typename_id<_Res>{}.name(),typename_id<_Arg>{}.name()}; }
 template< typename _Res, typename _Arg > inline typename std::enable_if<__is_non_void_pointer<_Arg>::value,_Res>::type runtime_cast ( _Arg s )
 { return runtime_cast<_Res> ( static_cast<void*> ( s ) ); }
