@@ -72,7 +72,7 @@ static std::string mangle_type_noPK ( std::string type )
         return "f";
     if ( type == "double" )
         return "d";
-    if ( type == "double" )
+    if ( type == "long double" )
         return "e";
     if ( type == "char" )
         return "c";
