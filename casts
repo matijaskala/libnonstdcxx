@@ -81,7 +81,8 @@ template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::uintp
 template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::string s ) { return runtime_cast<_Res> ( lexical_cast<void*> ( s ) ); }
 template< typename _Res > inline __for_non_scalar< _Res > runtime_cast ( void* s ) { throw non_std::bad_runtime_cast{typename_id<_Res>{}.name(),"void*"}; }
 
-template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value,_Res>::type runtime_cast ( _Arg s )
+template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value
+ && !std::is_same<_Res,_Arg>::value,_Res>::type runtime_cast ( _Arg s )
 { throw non_std::bad_runtime_cast{typename_id<_Res>{}.name(),typename_id<_Arg>{}.name()}; }
 template< typename _Res, typename _Arg > inline typename std::enable_if<__is_non_void_pointer<_Arg>::value,_Res>::type runtime_cast ( _Arg s )
 { return runtime_cast<_Res> ( static_cast<void*> ( s ) ); }
@@ -101,6 +102,9 @@ template<> inline std::string runtime_cast<std::string> ( float s ) { return lex
 template<> inline std::string runtime_cast<std::string> ( double s ) { return lexical_cast<std::string> ( s ); }
 template<> inline std::string runtime_cast<std::string> ( long double s ) { return lexical_cast<std::string> ( s ); }
 template<> inline std::string runtime_cast<std::string> ( void* s ) { return lexical_cast<std::string> ( s ); }
-template<> inline std::string runtime_cast<std::string> ( std::string s ) { return s; }
+
+template< typename _Type > inline typename std::enable_if<std::is_copy_constructible<_Type>::value,_Type>::type runtime_cast ( _Type s ) { return s; }
+template< typename _Type > inline typename std::enable_if<!std::is_copy_constructible<_Type>::value,_Type>::type runtime_cast ( const _Type& s )
+{ throw non_std::bad_runtime_cast{typename_id<_Type>{}.name(),typename_id<const _Type&>{}.name()}; }
 
 #endif // NON_STD_CASTS
