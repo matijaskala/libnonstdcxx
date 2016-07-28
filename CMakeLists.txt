@@ -33,6 +33,6 @@ install(FILES
 	funcid
 	signal
 	traits
-	typenameid
+	tupleid
 	xterm
 DESTINATION include/nonstd)

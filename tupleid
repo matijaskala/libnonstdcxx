@@ -1,0 +1,96 @@
+/*
+ * Information about multiple types
+ * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef TUPLEID
+#define TUPLEID
+
+#include <tuple>
+#include <typeindex>
+#ifdef __GNUC__
+#include "cxxabi"
+#endif
+
+#define tupleid(...) tuple_info{_TupleId<__typeof__(__VA_ARGS__)>{}}
+#define typeid2(...) tupleid(std::tuple<__typeof__(__VA_ARGS__)>)
+
+struct _TupleIdBase {
+    virtual ~_TupleIdBase() = default;
+    virtual std::type_index operator[] ( int i ) { throw std::out_of_range ( "tuple_info::operator[]" ); }
+    virtual std::string name() = 0;
+    virtual int count() = 0;
+};
+
+template <typename... _Types>
+struct _TupleId;
+
+struct tuple_info {
+    template < typename... _Types >
+    tuple_info ( _TupleId<_Types...>&& ) : _M_tupleid{new _TupleId<_Types...>} {}
+    ~tuple_info() { delete _M_tupleid; }
+    std::type_index operator[] ( int i ) const { return (*_M_tupleid)[i]; }
+    std::string name() const { return _M_tupleid->name(); }
+    int count() const { return _M_tupleid->count(); }
+
+private:
+    _TupleIdBase* _M_tupleid;
+};
+
+template <typename _FirstType, typename... _OtherTypes>
+struct _TupleId<std::tuple<_FirstType, _OtherTypes...>> : _TupleIdBase {
+    virtual std::type_index operator[] ( int i ) override {
+        return i ? _TupleId<std::tuple<_OtherTypes...>>{}[i-1] : _TupleId<std::tuple<_FirstType>>{}[0];
+    }
+    virtual std::string name() override {
+        return _TupleId<std::tuple<_FirstType>>{}.name() + "," + _TupleId<std::tuple<_OtherTypes...>>{}.name();
+    }
+    virtual int count() override {
+        return 1 + _TupleId<std::tuple<_OtherTypes...>>{}.count();
+    }
+};
+
+template <typename _OnlyOneType>
+struct _TupleId<std::tuple<_OnlyOneType>> : _TupleIdBase {
+    virtual std::type_index operator[] ( int i ) override {
+        if ( i != 0 )
+            return _TupleIdBase::operator[](0);
+        return typeid(_OnlyOneType);
+    }
+    virtual std::string name() override {
+#ifdef __GNUC__
+        return non_std::demangle(typeid(_OnlyOneType).name());
+#else
+        return typeid(_OnlyOneType).name();
+#endif
+    }
+    virtual int count() override {
+        return 1;
+    }
+};
+
+template <>
+struct _TupleId<std::tuple<>> : _TupleIdBase {
+    virtual std::string name() override {
+        return "";
+    }
+    virtual int count() override {
+        return 0;
+    }
+};
+
+#endif // TUPLEID

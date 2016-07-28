@@ -20,74 +20,20 @@
 #ifndef FUNCID
 #define FUNCID
 
-#include "typenameid"
-#include <stdexcept>
+#include "tupleid"
 
-template< typename... _Args >
-struct arg_id;
-
-template< typename _FirstArg, typename... _OtherArgs >
-struct arg_id<_FirstArg, _OtherArgs...>
-{
-    std::string operator[] ( int i ) {
-        return i == 0 ? typename_id<_FirstArg>{}.name() : arg_id<_OtherArgs...>()[i - 1];
-    }
-    std::string name() {
-        return typename_id<_FirstArg>{}.name() + "," + arg_id<_OtherArgs...>().name();
-    }
-    constexpr int count() {
-        return 1 + arg_id<_OtherArgs...>::count();
-    }
+struct func_info {
+    tuple_info args;
+    tuple_info return_type;
 };
 
-template< typename _OnlyOneArg >
-struct arg_id<_OnlyOneArg>
-{
-    std::string operator[] ( int i ) {
-        if ( i != 0 )
-            throw std::out_of_range ( "arg_id::operator[]" );
-        return name();
-    }
-    std::string name() {
-        return typename_id<_OnlyOneArg>{}.name();
-    }
-    constexpr int count() {
-        return 1;
-    }
-};
+template <typename _ReturnType, typename... _Args>
+func_info __funcid(_ReturnType(*__func)(_Args...)) { return {tupleid(std::tuple<_Args...>),typeid2(_ReturnType)}; }
 
-template<>
-struct arg_id<>
-{
-    std::string name() {
-        return "";
-    }
-    constexpr int count() {
-        return 0;
-    }
-};
+template <typename _ReturnType, typename _Class, typename... _Args>
+func_info __funcid(_ReturnType(_Class::*__func)(_Args...)) { return {tupleid(std::tuple<_Args...>),typeid2(_ReturnType)}; }
 
-template< typename _Func >
-struct func_id;
-
-template< typename _ReturnType, typename... _Args >
-struct func_id<_ReturnType(*)(_Args...)> : public func_id<_ReturnType(_Args...)>
-{};
-
-template< typename _ReturnType, typename _Class, typename... _Args >
-struct func_id<_ReturnType(_Class::*)(_Args...)> : public func_id<_ReturnType(_Args...)>
-{};
-
-template< typename _ReturnType, typename... _Args >
-struct func_id<_ReturnType(_Args...)>
-{
-    arg_id<_Args...> args;
-    std::string return_type() {
-        return typename_id<_ReturnType>().name();
-    }
-};
-
-#define funcid(FUNC) func_id<decltype(&FUNC)>{}
+#define funcid(FUNC) __funcid(&FUNC)
 #define func_name(FUNC) (#FUNC + ( "(" + funcid(FUNC).args.name() + ")" ) )
 #define method_name(CLASS,METHOD) (#METHOD + ( "(" + funcid(CLASS::METHOD).args.name() + ")" ) )
 
