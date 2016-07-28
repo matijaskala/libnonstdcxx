@@ -15,6 +15,7 @@ add_library(nonstdc++ SHARED
     directory.cpp
     dl.cpp
     exceptions.cpp
+    tupleid.cpp
     xterm.cpp
 )
 
