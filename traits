@@ -20,6 +20,22 @@
 #ifndef NON_STD_TRAITS
 #define NON_STD_TRAITS
 
+namespace non_std {
+
+template<typename T> struct is_char { using value_type = bool; static constexpr value_type value = false;
+                                      constexpr operator value_type() { return value; } };
+template<> struct is_char<char> { using value_type = bool; static constexpr value_type value = true;
+                                  constexpr operator value_type() { return value; } };
+template<> struct is_char<wchar_t> { using value_type = bool; static constexpr value_type value = true;
+                                     constexpr operator value_type() { return value; } };
+template<> struct is_char<char16_t> { using value_type = bool; static constexpr value_type value = true;
+                                      constexpr operator value_type() { return value; } };
+template<> struct is_char<char32_t> { using value_type = bool; static constexpr value_type value = true;
+                                      constexpr operator value_type() { return value; } };
+template<typename T> struct is_string { using value_type = bool; static constexpr value_type value = false;
+                                        constexpr operator value_type() { return value; } };
+template<typename C> struct is_string<std::basic_string<C>> : is_char<C> {};
+
 template<typename,int=0> struct __remove_everything_1;
 template<typename,int=0> struct __remove_everything_2;
 template<typename T> struct __remove_everything_1<T,2> { using type = T; };
@@ -37,8 +53,9 @@ template<typename T, int __internal, std::size_t size> struct __remove_everythin
 
 template<typename T> struct remove_everything { using type = typename __remove_everything_1<T>::type; };
 template<typename T> using remove_everything_t = typename remove_everything<T>::type;
+}
 
-#define __classof__(object) remove_everything_t<decltype(object)>
+#define __classof__(object) non_std::remove_everything_t<decltype(object)>
 #define this_t __classof__(this)
 
 #endif // NON_STD_TRAITS
