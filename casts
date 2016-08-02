@@ -22,6 +22,7 @@
 
 #include <codecvt>
 #include <sstream>
+#include "traits"
 #include "tupleid"
 
 namespace non_std
@@ -42,8 +43,10 @@ public:
 };
 }
 
+template < typename _Tp1, typename _Tp2 > constexpr bool __both_strings = non_std::is_string<_Tp1>::value && non_std::is_string<_Tp2>::value;
+
 template < typename _Res, typename _Arg >
-inline _Res lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
+inline typename std::enable_if<!__both_strings<_Res,_Arg>,_Res>::type lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
     std::stringstream stream;
     _Res r;
     if ( !( stream << s ) || !( stream >> r ) || stream.rdbuf()->in_avail() )
@@ -51,16 +54,16 @@ inline _Res lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
     return r;
 }
 
-template<typename _Char1, typename _Char2> std::basic_string<_Char1>
-inline lexical_cast ( const std::basic_string<_Char2>& s ) throw ( non_std::bad_lexical_cast ) {
-    std::basic_string<_Char1> _1str;
+template < typename _Res, typename _Arg >
+inline typename std::enable_if<__both_strings<_Res,_Arg>,_Res>::type lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
+    _Res _1str;
     {
         std::locale l{""};
-        using cvt_t = std::codecvt< _Char1, _Char2, mbstate_t >;
+        using cvt_t = std::codecvt< typename _Res::value_type, typename _Arg::value_type, mbstate_t >;
         const cvt_t& cvt = std::use_facet< cvt_t > ( l );
-        _Char1* pwc;
-        const _Char2* pc;
-        auto dest = new _Char1[s.length() + 1];
+        typename _Res::value_type* pwc;
+        const typename _Arg::value_type* pc;
+        auto dest = new typename _Res::value_type[s.length() + 1];
         auto state = mbstate_t{};
         switch ( cvt.in(state, s.c_str(), s.c_str() + s.length() + 1, pc, dest, dest + s.length() + 1, pwc) )
         {
