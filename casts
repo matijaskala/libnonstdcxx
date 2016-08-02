@@ -20,6 +20,7 @@
 #ifndef NON_STD_CASTS
 #define NON_STD_CASTS
 
+#include <codecvt>
 #include <sstream>
 #include "tupleid"
 
@@ -50,8 +51,29 @@ inline _Res lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
     return r;
 }
 
-template<>
-std::wstring lexical_cast ( const std::string& s ) throw ( non_std::bad_lexical_cast );
+template<typename _Char1, typename _Char2> std::basic_string<_Char1>
+inline lexical_cast ( const std::basic_string<_Char2>& s ) throw ( non_std::bad_lexical_cast ) {
+    std::basic_string<_Char1> _1str;
+    {
+        std::locale l{""};
+        using cvt_t = std::codecvt< _Char1, _Char2, mbstate_t >;
+        const cvt_t& cvt = std::use_facet< cvt_t > ( l );
+        _Char1* pwc;
+        const _Char2* pc;
+        auto dest = new _Char1[s.length() + 1];
+        auto state = mbstate_t{};
+        switch ( cvt.in(state, s.c_str(), s.c_str() + s.length() + 1, pc, dest, dest + s.length() + 1, pwc) )
+        {
+            case cvt_t::ok:
+                break;
+            default:
+                throw non_std::bad_lexical_cast{};
+        }
+        _1str = dest;
+        delete[] dest;
+    }
+    return _1str;
+}
 
 template< typename _Tp > using __is_pointer = std::integral_constant<bool,std::is_pointer<_Tp>::value||std::is_member_pointer<_Tp>::value>;
 template< typename _Tp > using __is_non_void_pointer = std::integral_constant<bool,__is_pointer<_Tp>::value&&!std::is_same<_Tp,void*>::value>;

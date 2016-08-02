@@ -10,7 +10,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -pedantic")
 
 add_library(nonstdc++ SHARED
-    casts.cpp
     cxxabi.cpp
     directory.cpp
     dl.cpp
