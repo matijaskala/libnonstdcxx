@@ -36,8 +36,8 @@ struct _TupleId;
 struct _TupleIdBase;
 
 struct tuple_info {
-    template <typename... _Types>
-    static tuple_info create() { return {new _TupleId<_Types...>}; }
+    template <typename _Tuple>
+    static tuple_info create() { return {new _TupleId<_Tuple>}; }
     tuple_info ( const tuple_info& other ) = delete;
     tuple_info ( tuple_info&& other );
     ~tuple_info();
@@ -103,6 +103,9 @@ struct _TupleId<std::tuple<>> : _TupleIdBase {
         return 0;
     }
 };
+
+template <typename _Tp1,typename _Tp2>
+struct _TupleId<std::pair<_Tp1, _Tp2>> : _TupleId<std::tuple<_Tp1,_Tp2>> {};
 }
 
 #endif // TUPLEID
