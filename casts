@@ -58,7 +58,7 @@ template < typename _Res, typename _Arg >
 inline typename std::enable_if<__both_strings<_Res,_Arg>,_Res>::type lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
     _Res _1str;
     {
-        std::locale l{""};
+        std::locale l;
         using cvt_t = std::codecvt< typename _Res::value_type, typename _Arg::value_type, mbstate_t >;
         const cvt_t& cvt = std::use_facet< cvt_t > ( l );
         typename _Res::value_type* pwc;
