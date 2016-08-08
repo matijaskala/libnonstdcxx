@@ -135,10 +135,11 @@ template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( std::st
 template< typename _Res > inline __for_arithmetic< _Res > runtime_cast ( char s[] ) { return lexical_cast<_Res> ( s ); }
 
 template< typename _Res > inline __for_pointer< _Res > runtime_cast ( void* s ) { return static_cast<_Res> ( s ); }
+template< typename _Res, typename _Ret, typename _Class > inline __for_pointer< _Res > runtime_cast ( _Ret _Class::*s ) { return reinterpret_cast<_Res&> ( s ); }
 template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::uintptr_t s ) { return reinterpret_cast<_Res> ( s ); }
 template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::string s ) { return runtime_cast<_Res> ( lexical_cast<void*> ( s ) ); }
 template< typename _Res > inline __for_pointer< _Res > runtime_cast ( char s[] ) { return runtime_cast<_Res> ( lexical_cast<void*> ( s ) ); }
-template< typename _Res > inline __for_non_scalar< _Res > runtime_cast ( void* s ) { throw non_std::bad_runtime_cast{typeid2(_Res).name(),"void*"}; }
+template< typename _Res, typename _Arg > inline __for_non_scalar< _Res > runtime_cast ( _Arg* s ) { throw non_std::bad_runtime_cast{typeid2(_Res).name(),typeid2(_Arg*).name()}; }
 
 template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value
  && !std::is_same<_Res,_Arg>::value && std::is_copy_constructible<_Arg>::value,_Res>::type runtime_cast ( _Arg s )
