@@ -93,17 +93,19 @@ class basic_variant {
         template< typename _Type >
         struct get {
             _Type value;
+            get ( ) { value.~_Type(); }
             template< typename _Arg >
-            void operator() ( _Arg* __arg ) { value = runtime_cast<_Type> ( *__arg ); }
-            void operator() ( _Type* data ) { value = *data; }
+            void operator() ( _Arg* __arg ) { new(&value) _Type{runtime_cast<_Type> ( *__arg )}; }
+            void operator() ( _Type* data ) { new(&value) _Type{*data}; }
             void operator() ( null_t ) { throw bad_get(); }
         };
 
         template<typename _Type> struct get<_Type&&> {
             _Type value;
+            get ( ) { value.~_Type(); }
             template< typename _Arg >
-            void operator() ( _Arg* __arg ) { value = runtime_cast<_Type> ( *__arg ); }
-            void operator() ( _Type* data ) { value = std::move ( *data ); }
+            void operator() ( _Arg* __arg ) { new(&value) _Type{runtime_cast<_Type> ( *__arg )}; }
+            void operator() ( _Type* data ) { new(&value) _Type{std::move ( *data )}; }
             void operator() ( null_t ) { throw bad_get(); }
         };
 
