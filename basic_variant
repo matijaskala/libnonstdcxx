@@ -45,7 +45,7 @@ public:
     using next::create;
 
     static void create ( _FirstType __value, std::type_index& type, void*& data ) {
-        data = new _FirstType ( __value );
+        data = new _FirstType ( std::move ( __value ) );
         type = current_type();
     }
 
@@ -95,6 +95,15 @@ class basic_variant {
             _Type value;
             template< typename _Arg >
             void operator() ( _Arg* __arg ) { value = runtime_cast<_Type> ( *__arg ); }
+            void operator() ( _Type* data ) { value = *data; }
+            void operator() ( null_t ) { throw bad_get(); }
+        };
+
+        template<typename _Type> struct get<_Type&&> {
+            _Type value;
+            template< typename _Arg >
+            void operator() ( _Arg* __arg ) { value = runtime_cast<_Type> ( *__arg ); }
+            void operator() ( _Type* data ) { value = std::move ( *data ); }
             void operator() ( null_t ) { throw bad_get(); }
         };
 
@@ -129,7 +138,7 @@ public:
 
     template< typename _Type >
     basic_variant ( _Type value ) {
-        set ( value );
+        set ( std::move ( value ) );
     }
 
     ~basic_variant ( ) { reset(); }
@@ -148,7 +157,7 @@ public:
 
     template< typename _Type >
     basic_variant& operator= ( _Type value ) {
-        set ( value );
+        set ( std::move ( value ) );
         return *this;
     }
 
@@ -172,27 +181,17 @@ public:
     }
 
     template< typename _Type >
-    _Type as () const {
+    typename std::remove_reference<_Type>::type as () const {
         typename visitors::template get<_Type> visitor;
-        if ( type == typeid ( _Type ) )
-            return get<_Type> ();
         apply_visitor ( visitor );
-        return visitor.value;
+        return std::move ( visitor.value );
     }
 
 private:
     template< typename _Type >
-    const _Type& get () const {
-        auto value = static_cast<_Type*> ( data );
-        if ( !value )
-            throw bad_get();
-        return *value;
-    }
-
-    template< typename _Type >
     void set ( _Type value ) {
         reset();
-        manager::create ( value, type, data );
+        manager::create ( std::move ( value ), type, data );
     }
 
 };
