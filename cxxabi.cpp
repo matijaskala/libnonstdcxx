@@ -19,7 +19,7 @@
 
 #include "cxxabi"
 
-#ifdef __GNUC__
+#if defined __GNUC__ || defined __CLANG__
 
 #include <cxxabi.h>
 #include <memory>
