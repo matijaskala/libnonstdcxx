@@ -14,25 +14,27 @@ add_library(nonstdc++ SHARED
     directory.cpp
     dl.cpp
     exceptions.cpp
+    stdio_sync_filebuf.cpp
     tupleid.cpp
     xterm.cpp
 )
 
 install(TARGETS nonstdc++
-	RUNTIME DESTINATION bin
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib)
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib)
 install(FILES
-	basic_variant
-	buffered_ifstream
-	casts
-	cxxabi
-	directory
-	dl
-	file
-	funcid
-	signal
-	traits
-	tupleid
-	xterm
+    basic_variant
+    buffered_ifstream
+    casts
+    cxxabi
+    directory
+    dl
+    file
+    funcid
+    signal
+    stdio_sync_filebuf
+    traits
+    tupleid
+    xterm
 DESTINATION include/nonstd)
