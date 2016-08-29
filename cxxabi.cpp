@@ -19,17 +19,25 @@
 
 #include "cxxabi"
 
-#if defined __GNUC__ || defined __CLANG__
+#if defined __GNUC__ || defined __clang__
 
 #include <cxxabi.h>
-#include <memory>
 #include <vector>
 #include <iostream>
 #include <cstdlib>
 
 std::string non_std::demangle ( const char* symbol ) {
-    std::unique_ptr< char, void ( * ) ( void* ) > name ( abi::__cxa_demangle ( symbol, 0, 0, 0 ), std::free );
-    return name.get();
+    using namespace abi;
+    char* demangled_symbol = __cxa_demangle ( symbol, 0, 0, 0 );
+    std::string r;
+    if (demangled_symbol) {
+        r = demangled_symbol;
+        std::free ( demangled_symbol );
+    }
+    else {
+        r = "<no type>";
+    }
+    return r;
 }
 
 static std::string mangle_PK ( std::string pk )
