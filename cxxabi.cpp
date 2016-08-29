@@ -80,6 +80,16 @@ static std::string mangle_type_noPK ( std::string type )
         return "a";
     if ( type == "unsigned char" )
         return "h";
+    if ( type == "wchar_t" )
+        return "w";
+    if ( type == "char16_t" )
+        return "Ds";
+    if ( type == "char32_t" )
+        return "Di";
+    if ( type == "__int128" )
+        return "n";
+    if ( type == "unsigned __int128" )
+        return "o";
 
     std::string ret;
     ret += '0' + type.length();
