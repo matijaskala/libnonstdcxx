@@ -14,7 +14,7 @@ add_library(char32 SHARED
     getc16.c
     getc32.c
     putc32.c
-    ungetc.c
+    ungetc32.c
 )
 
 add_library(nonstdc++ SHARED
