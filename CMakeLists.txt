@@ -33,6 +33,8 @@ install(TARGETS char32 nonstdc++
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)
 install(FILES
+    char32.h
+
     basic_variant
     buffered_ifstream
     casts
