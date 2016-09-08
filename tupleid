@@ -29,7 +29,8 @@
 #define tupleid(...) non_std::tuple_info::create<__typeof__(__VA_ARGS__)> ()
 #define typeid2(...) tupleid(std::tuple<__typeof__(__VA_ARGS__)>)
 
-namespace non_std {
+namespace non_std [[gnu::visibility("default")]]
+{
 
 template <typename... _Types>
 struct _TupleId;

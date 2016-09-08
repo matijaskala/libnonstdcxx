@@ -25,7 +25,7 @@
 #include "traits"
 #include "tupleid"
 
-namespace non_std
+namespace non_std [[gnu::visibility("default")]]
 {
 
 class bad_lexical_cast : public std::bad_cast {

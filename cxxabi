@@ -22,7 +22,7 @@
 
 #include <string>
 
-namespace non_std
+namespace non_std [[gnu::visibility("default")]]
 {
 
 std::string demangle ( const char* symbol );

@@ -20,7 +20,7 @@
 #ifndef NON_STD_DL
 #define NON_STD_DL
 
-namespace dl
+namespace dl [[gnu::visibility("default")]]
 {
 
 void* open ( char* file );

@@ -24,7 +24,7 @@
 #include <typeindex>
 #include "casts"
 
-namespace non_std
+namespace non_std [[gnu::visibility("default")]]
 {
 
 class bad_get : public std::exception {

@@ -20,13 +20,13 @@
 #ifndef NON_STD_DIRECTORY
 #define NON_STD_DIRECTORY
 
-#include <vector>
 #include <string>
+#include <vector>
 
-namespace non_std
+namespace non_std [[gnu::visibility("default")]]
 {
 
-class [[gnu::visibility("default")]] directory
+class directory
 {
 public:
     class entry {

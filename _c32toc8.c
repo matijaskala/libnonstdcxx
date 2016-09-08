@@ -26,6 +26,8 @@ void _c32toc8 ( uint_least32_t __c, char* c8 ) {
         __c = U16_GET_SUPPLEMENTARY(lead, __c);
         lead = 0;
     }
+    if (!c8)
+        return;
     if (lead) {
         c8[0] = 0;
         return;
@@ -52,6 +54,5 @@ void _c32toc8 ( uint_least32_t __c, char* c8 ) {
         c8[i] = 0x80 | (__c & 0x3f);
         __c >>= 6;
     }
-    if (c8[0])
-        c8[0] |= 0xff << (8 - len);
+    c8[0] |= 0xff << (8 - len);
 }

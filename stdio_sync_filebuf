@@ -23,7 +23,8 @@
 #include <streambuf>
 #include "char32.h"
 
-namespace non_std [[gnu::visibility("default")]] {
+namespace non_std
+{
 
   template<typename _CharT, typename _Traits = std::char_traits<_CharT> >
     class stdio_sync_filebuf : public std::basic_streambuf<_CharT, _Traits>
@@ -214,43 +215,43 @@ namespace non_std [[gnu::visibility("default")]] {
     };
 
   template<>
-    stdio_sync_filebuf<char32_t>::int_type
-    stdio_sync_filebuf<char32_t>::syncgetc()
+    inline auto
+    stdio_sync_filebuf<char32_t>::syncgetc() -> int_type
     {
         return getc32(file());
     }
 
   template<>
-    stdio_sync_filebuf<char32_t>::int_type
-    stdio_sync_filebuf<char32_t>::syncungetc(int_type __c)
+    inline auto
+    stdio_sync_filebuf<char32_t>::syncungetc(int_type __c) -> int_type
     {
         return ungetc32(__c, file());
     }
 
   template<>
-    stdio_sync_filebuf<char32_t>::int_type
-    stdio_sync_filebuf<char32_t>::syncputc(int_type __c)
+    inline auto
+    stdio_sync_filebuf<char32_t>::syncputc(int_type __c) -> int_type
     {
         return putc32(__c, file());
     }
 
   template<>
-    stdio_sync_filebuf<char16_t>::int_type
-    stdio_sync_filebuf<char16_t>::syncgetc()
+    inline auto
+    stdio_sync_filebuf<char16_t>::syncgetc() -> int_type
     {
         return getc16(file());
     }
 
   template<>
-    stdio_sync_filebuf<char16_t>::int_type
-    stdio_sync_filebuf<char16_t>::syncungetc(int_type __c)
+    inline auto
+    stdio_sync_filebuf<char16_t>::syncungetc(int_type __c) -> int_type
     {
         return ungetc32(__c, file());
     }
 
   template<>
-    stdio_sync_filebuf<char16_t>::int_type
-    stdio_sync_filebuf<char16_t>::syncputc(int_type __c)
+    inline auto
+    stdio_sync_filebuf<char16_t>::syncputc(int_type __c) -> int_type
     {
         return putc32(__c, file());
     }
