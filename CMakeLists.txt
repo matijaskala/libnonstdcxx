@@ -9,17 +9,26 @@ include("${ECM_MODULE_DIR}/ECMUninstallTarget.cmake")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -pedantic")
 
+add_library(char32 SHARED
+    _c32toc8.c
+    getc16.c
+    getc32.c
+    putc32.c
+    ungetc.c
+)
+
 add_library(nonstdc++ SHARED
     cxxabi.cpp
     directory.cpp
     dl.cpp
     exceptions.cpp
-    stdio_sync_filebuf.cpp
     tupleid.cpp
     xterm.cpp
 )
 
-install(TARGETS nonstdc++
+target_link_libraries(nonstdc++ char32)
+
+install(TARGETS char32 nonstdc++
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)

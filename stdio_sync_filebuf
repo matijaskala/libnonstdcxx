@@ -21,6 +21,7 @@
 #define NON_STD_STDIO_SYNC_FILEBUF
 
 #include <streambuf>
+#include "char32.h"
 
 namespace non_std [[gnu::visibility("default")]] {
 
@@ -214,15 +215,45 @@ namespace non_std [[gnu::visibility("default")]] {
 
   template<>
     stdio_sync_filebuf<char32_t>::int_type
-    stdio_sync_filebuf<char32_t>::syncgetc();
+    stdio_sync_filebuf<char32_t>::syncgetc()
+    {
+        return getc32(file());
+    }
 
   template<>
     stdio_sync_filebuf<char32_t>::int_type
-    stdio_sync_filebuf<char32_t>::syncungetc(int_type __c);
+    stdio_sync_filebuf<char32_t>::syncungetc(int_type __c)
+    {
+        return ungetc32(__c, file());
+    }
 
   template<>
     stdio_sync_filebuf<char32_t>::int_type
-    stdio_sync_filebuf<char32_t>::syncputc(int_type __c);
+    stdio_sync_filebuf<char32_t>::syncputc(int_type __c)
+    {
+        return putc32(__c, file());
+    }
+
+  template<>
+    stdio_sync_filebuf<char16_t>::int_type
+    stdio_sync_filebuf<char16_t>::syncgetc()
+    {
+        return getc16(file());
+    }
+
+  template<>
+    stdio_sync_filebuf<char16_t>::int_type
+    stdio_sync_filebuf<char16_t>::syncungetc(int_type __c)
+    {
+        return ungetc32(__c, file());
+    }
+
+  template<>
+    stdio_sync_filebuf<char16_t>::int_type
+    stdio_sync_filebuf<char16_t>::syncputc(int_type __c)
+    {
+        return putc32(__c, file());
+    }
 }
 
 #endif // NON_STD_STDIO_SYNC_FILEBUF
