@@ -17,29 +17,12 @@
  */
 
 #include <unicode/utf8.h>
-#include "char32.h"
 
-uint8_t _c8len ( char __c );
-uint_least32_t getc32 ( FILE* stream ) {
-    uint_least32_t __c;
-    uint8_t len;
-    {
-        int c = getc(stream);
-        if ( c == EOF )
-            return -1;
-        if (U8_IS_SINGLE(c))
-            return c;
-        len = _c8len(c);
-        if (len == 1)
-            return -1;
-        __c = c & (0xfe >> len);
-    }
-    for (int i = 1; i < len; i++) {
-        int c = getc(stream);
-        if (!U8_IS_TRAIL(c))
-            return -1;
-        __c <<= 6;
-        __c |= (c & 0x3f);
-    }
-    return __c;
+uint8_t _c8len ( char __c ) {
+    if (!U8_IS_LEAD(__c))
+        return 1;
+    uint8_t len = 1;
+    while (__c >= 0xff << (7 - len))
+        len++;
+    return len;
 }
