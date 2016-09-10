@@ -16,9 +16,15 @@
  *
  */
 
+#include <unicode/utf8.h>
 #include <unicode/utf16.h>
 
 void _c32toc8 ( uint_least32_t __c, char* c8 ) {
+    if (U8_IS_SINGLE(__c)) {
+        c8[0] = __c;
+        c8[1] = '\0';
+        return;
+    }
     static uint_least16_t lead = 0;
     if (U16_IS_LEAD(__c))
         lead = __c;
@@ -29,13 +35,11 @@ void _c32toc8 ( uint_least32_t __c, char* c8 ) {
     if (!c8)
         return;
     if (lead) {
-        c8[0] = 0;
+        c8[0] = '\0';
         return;
     }
     int len;
-    if (__c < 0x80)
-        len = 1;
-    else if (__c < 0x800)
+    if (__c < 0x800)
         len = 2;
     else if (__c < 0x10000)
         len = 3;
@@ -46,10 +50,6 @@ void _c32toc8 ( uint_least32_t __c, char* c8 ) {
     else
         len = 6;
     c8[len] = 0;
-    if (len == 1) {
-        *c8 = __c;
-        return;
-    }
     for (int i = len - 1; i >= 0; i--) {
         c8[i] = 0x80 | (__c & 0x3f);
         __c >>= 6;
