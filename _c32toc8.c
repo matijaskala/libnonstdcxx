@@ -16,11 +16,10 @@
  *
  */
 
-#include <unicode/utf8.h>
 #include <unicode/utf16.h>
 
 void _c32toc8 ( uint_least32_t __c, char* c8 ) {
-    if (U8_IS_SINGLE(__c)) {
+    if (__c < 0x80) {
         c8[0] = __c;
         c8[1] = '\0';
         return;
