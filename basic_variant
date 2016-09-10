@@ -92,17 +92,20 @@ class basic_variant {
     struct visitors {
         template< typename _Type >
         struct get {
-            _Type value;
-            get ( ) { value.~_Type(); }
+            typename std::aligned_storage<sizeof(_Type),alignof(_Type)>::type actual_value;
+            _Type& value = reinterpret_cast<_Type&>(actual_value);
+            ~get ( ) { value.~_Type(); }
             template< typename _Arg >
             void operator() ( _Arg* __arg ) { new(&value) _Type{runtime_cast<_Type> ( *__arg )}; }
             void operator() ( _Type* data ) { new(&value) _Type{*data}; }
             void operator() ( null_t ) { throw bad_get(); }
         };
 
-        template<typename _Type> struct get<_Type&&> {
-            _Type value;
-            get ( ) { value.~_Type(); }
+        template<typename _Type>
+        struct get<_Type&&> {
+            typename std::aligned_storage<sizeof(_Type),alignof(_Type)>::type actual_value;
+            _Type& value = reinterpret_cast<_Type&>(actual_value);
+            ~get ( ) { value.~_Type(); }
             template< typename _Arg >
             void operator() ( _Arg* __arg ) { new(&value) _Type{runtime_cast<_Type> ( *__arg )}; }
             void operator() ( _Type* data ) { new(&value) _Type{std::move ( *data )}; }
