@@ -19,6 +19,8 @@
 #include <unicode/utf16.h>
 
 void _c32toc8 ( uint_least32_t __c, char* c8 ) {
+    if (!c8)
+        return;
     if (__c < 0x80) {
         c8[0] = __c;
         c8[1] = '\0';
@@ -31,8 +33,6 @@ void _c32toc8 ( uint_least32_t __c, char* c8 ) {
         __c = U16_GET_SUPPLEMENTARY(lead, __c);
         lead = 0;
     }
-    if (!c8)
-        return;
     if (lead) {
         c8[0] = '\0';
         return;
