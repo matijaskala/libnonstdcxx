@@ -23,6 +23,7 @@ add_library(nonstdc++ SHARED
     directory.cpp
     dl.cpp
     exceptions.cpp
+    improved_istream.cpp
     tupleid.cpp
     xterm.cpp
 )
@@ -44,6 +45,7 @@ install(FILES
     dl
     file
     funcid
+    improved_istream
     signal
     stdio_sync_filebuf
     traits
