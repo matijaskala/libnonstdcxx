@@ -22,14 +22,16 @@
 
 #include <stdexcept>
 #include <typeindex>
-#include "casts"
+#include "runtime_cast"
 
 namespace non_std [[gnu::visibility("default")]]
 {
 
 class bad_get : public std::exception {
 public:
-    virtual const char* what() const noexcept;
+    virtual const char* what() const noexcept {
+        return "non_std::bad_get";
+    }
 };
 
 template< typename... _Types >

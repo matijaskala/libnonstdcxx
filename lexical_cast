@@ -1,0 +1,141 @@
+/*
+ * Lexical cast
+ * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ *
+ * This library is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation, either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef NON_STD_LEXICAL_CAST
+#define NON_STD_LEXICAL_CAST
+
+#include <codecvt>
+#include <sstream>
+#include "traits"
+
+namespace non_std [[gnu::visibility("default")]]
+{
+
+class bad_lexical_cast : public std::bad_cast {
+public:
+    virtual const char* what() const noexcept {
+        return "non_std::bad_lexical_cast";
+    }
+};
+}
+
+template < typename _Tp1, typename _Tp2 > using __both_strings = std::integral_constant<bool,non_std::is_string<_Tp1>::value && non_std::is_string<_Tp2>::value>;
+
+template < typename _Res, typename _Arg >
+inline typename std::enable_if<!__both_strings<_Res,_Arg>::value,_Res>::type lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
+    std::stringstream stream;
+    _Res r;
+    if ( !( stream << s ) || !( stream >> r ) || stream.rdbuf()->in_avail() )
+        throw non_std::bad_lexical_cast();
+    return r;
+}
+
+template < typename _Res, typename _Arg >
+inline typename std::enable_if<__both_strings<_Res,_Arg>::value,_Res>::type lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
+    _Res _1str;
+    {
+        std::locale l;
+        using cvt_t = std::codecvt< typename _Res::value_type, typename _Arg::value_type, mbstate_t >;
+        const cvt_t& cvt = std::use_facet< cvt_t > ( l );
+        typename _Res::value_type* pwc;
+        const typename _Arg::value_type* pc;
+        auto dest = new typename _Res::value_type[s.length() + 1];
+        auto state = mbstate_t{};
+        switch ( cvt.in(state, s.c_str(), s.c_str() + s.length() + 1, pc, dest, dest + s.length() + 1, pwc) )
+        {
+            case cvt_t::ok:
+                break;
+            default:
+                throw non_std::bad_lexical_cast{};
+        }
+        _1str = dest;
+        delete[] dest;
+    }
+    return _1str;
+}
+
+template<> inline std::string lexical_cast<std::string> ( const char32_t& s ) throw ( non_std::bad_lexical_cast ) {
+    char32_t c32 = s;
+    size_t len;
+    if ( c32 < 0x80 )
+        len = 1;
+    else if ( c32 < 0x800 )
+        len = 2;
+    else if ( c32 < 0x10000 )
+        len = 3;
+    else if ( c32 < 0x200000 )
+        len = 4;
+    else if ( c32 < 0x4000000 )
+        len = 5;
+    else
+        len = 6;
+    char c8[7];
+    c8[len] = 0;
+    if (len == 1) {
+        *c8 = c32;
+        return c8;
+    }
+    for ( int i = len - 1; i >= 0; i-- ) {
+        c8[i] = 0x80 | (c32 & 0x3f);
+        c32 >>= 6;
+    }
+    c8[0] |= 0xff << (8 - len);
+    return c8;
+}
+
+template<> inline std::string lexical_cast<std::string> ( const std::u32string& s ) throw ( non_std::bad_lexical_cast ) {
+    std::string r;
+    for ( auto c: s )
+        r += lexical_cast<std::string>(c);
+    return r;
+}
+
+template<> inline std::string lexical_cast<std::string> ( const wchar_t& s ) throw ( non_std::bad_lexical_cast ) {
+    char p[]{0,0,0,0};
+    std::size_t bytes;
+    wchar_t wc = s;
+    if ( wc < 0x80 )
+        return std::string{static_cast<char>(wc)};
+    else if ( wc < 0x800 )
+        bytes = 2;
+    else if ( wc < 0x10000 )
+        bytes = 3;
+    else if ( wc < 0x200000 )
+        bytes = 4;
+    else
+        return "";
+    for ( int i = bytes - 1; i >= 0; i-- ) {
+        p[i] = 0x80 | (wc & 0x3f);
+        wc >>= 6;
+    }
+    p[0] |= 0xf0 << (4 - bytes);
+    return p;
+}
+
+template<> inline std::string lexical_cast<std::string> ( const std::wstring& s ) throw ( non_std::bad_lexical_cast ) {
+    std::string r;
+    for ( auto c: s )
+        r += lexical_cast<std::string>(c);
+    return r;
+}
+
+template<> inline std::string lexical_cast<std::string> ( const std::string& s ) throw ( non_std::bad_lexical_cast ) { return s; }
+template<> inline std::wstring lexical_cast<std::wstring> ( const std::wstring& s ) throw ( non_std::bad_lexical_cast ) { return s; }
+
+#endif // NON_STD_LEXICAL_CAST

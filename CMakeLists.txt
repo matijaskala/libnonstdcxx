@@ -29,7 +29,6 @@ add_library(nonstdc++ SHARED
 
 add_library(nonstdc++-extra SHARED
     cxxabi.cpp
-    exceptions.cpp
     improved_istream.cpp
     tupleid.cpp
 )
@@ -43,13 +42,14 @@ install(FILES
 
     basic_variant
     buffered_ifstream
-    casts
     cxxabi
     directory
     dl
     file
     funcid
     improved_istream
+    lexical_cast
+    runtime_cast
     signal
     stdio_sync_filebuf
     traits
