@@ -22,6 +22,7 @@
 
 #include <codecvt>
 #include <sstream>
+#include <typeinfo>
 #include "traits"
 
 namespace non_std [[gnu::visibility("default")]]
