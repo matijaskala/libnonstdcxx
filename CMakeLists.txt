@@ -22,13 +22,16 @@ add_library(char32 SHARED
 )
 
 add_library(nonstdc++ SHARED
-    cxxabi.cpp
     directory.cpp
     dl.cpp
+    xterm.cpp
+)
+
+add_library(nonstdc++-extra SHARED
+    cxxabi.cpp
     exceptions.cpp
     improved_istream.cpp
     tupleid.cpp
-    xterm.cpp
 )
 
 install(TARGETS char32 nonstdc++
