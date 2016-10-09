@@ -15,6 +15,9 @@ add_library(char32 SHARED
     getc16.c
     getc32.c
     putc32.c
+    utf8len.c
+    utf8toutf16.c
+    utf8toutf32.c
     ungetc32.c
 )
 

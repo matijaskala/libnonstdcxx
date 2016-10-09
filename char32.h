@@ -33,6 +33,10 @@ uint_least32_t ungetc32 ( uint_least32_t __c, FILE* stream );
 
 uint_least16_t getc16 ( FILE* stream );
 
+size_t utf8_strlen ( const char* __s );
+uint_least32_t* utf8_to_utf32 ( const char* __src, uint_least32_t* __dst, size_t __len );
+uint_least16_t* utf8_to_utf16 ( const char* __src, uint_least16_t* __dst, size_t __len );
+
 #ifdef __cplusplus
 }
 #endif
