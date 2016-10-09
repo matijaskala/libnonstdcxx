@@ -28,8 +28,6 @@ add_library(nonstdc++ SHARED
     xterm.cpp
 )
 
-target_link_libraries(nonstdc++ char32)
-
 install(TARGETS char32 nonstdc++
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
