@@ -23,7 +23,7 @@
 
 #define U8_IS_SINGLE(c) !((c) & 0xc0)
 #define U8_IS_LEAD(c) (static_cast<std::uint8_t>((c) - 0xc0) < 0x3e)
-#define U8_IS_TRAIL(c) ((c) & 0xc0 == 0x80)
+#define U8_IS_TRAIL(c) (((c) & 0xc0) == 0x80)
 #define U16_LEAD(c) static_cast<char16_t>(((c) >> 10) + 0xd7c0)
 #define U16_TRAIL(c) static_cast<char16_t>(((c) & 0x3ff) | 0xdc00)
 
