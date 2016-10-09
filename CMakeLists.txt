@@ -33,7 +33,7 @@ add_library(nonstdc++-extra SHARED
     tupleid.cpp
 )
 
-install(TARGETS char32 nonstdc++
+install(TARGETS char32 nonstdc++ nonstdc++-extra
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)
