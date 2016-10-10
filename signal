@@ -42,7 +42,7 @@ class slot
         void (Object::*method) (Args...);
         Object* obj;
         simple_bind(void (Object::*method) (Args...), Object* obj) : method{method}, obj{obj} {}
-        void operator() (Args... args) { (obj->*method) ( std::forward<Args> (args)... ); }
+        void operator() (Args&&... args) { (obj->*method) ( std::forward<Args> (args)... ); }
     };
 
 public:
@@ -70,6 +70,8 @@ class signal : public slot<Args...>
 public:
     signal ( void* data );
     ~signal();
+    template< typename Object, typename Slot >
+    void connect ( Object* receiver, Slot&& slot ) { connect ( receiver->non_std_slot<Args...> ( std::forward<Slot> ( slot ) ) ); }
     void connect ( slot<Args...>& slot ) { m_slots.push_back ( &slot ); slot.m_signals.push_front ( this ); }
     void disconnect ( slot<Args...>& slot ) { m_slots.remove ( &slot ); slot.m_signals.remove ( this ); }
 };
