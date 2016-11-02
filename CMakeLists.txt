@@ -6,9 +6,6 @@ find_package(ECM 1.3.0 REQUIRED NO_MODULE)
 
 include("${ECM_MODULE_DIR}/ECMUninstallTarget.cmake")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -std=c11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -pedantic")
-
 add_library(char32 SHARED
     _c32toc8.c
     _c8len.c
@@ -26,12 +23,17 @@ add_library(nonstdc++ SHARED
     dl.cpp
     xterm.cpp
 )
+target_compile_features(nonstdc++
+    PUBLIC cxx_return_type_deduction)
 
 add_library(nonstdc++-extra SHARED
     cxxabi.cpp
     improved_istream.cpp
     tupleid.cpp
 )
+target_compile_features(nonstdc++-extra
+    PUBLIC cxx_attributes cxx_nullptr cxx_variadic_templates
+    PRIVATE cxx_auto_type cxx_range_for)
 
 install(TARGETS char32 nonstdc++ nonstdc++-extra
     RUNTIME DESTINATION bin
