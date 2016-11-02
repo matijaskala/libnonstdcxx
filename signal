@@ -71,7 +71,7 @@ public:
     signal ( void* data );
     ~signal();
     template< typename Object, typename Slot >
-    void connect ( Object* receiver, Slot&& slot ) { connect ( receiver->non_std_slot<Args...> ( std::forward<Slot> ( slot ) ) ); }
+    void connect ( Object* receiver, Slot&& slot ) { connect ( receiver->template non_std_slot<Args...> ( std::forward<Slot> ( slot ) ) ); }
     void connect ( slot<Args...>& slot ) { m_slots.push_back ( &slot ); slot.m_signals.push_front ( this ); }
     void disconnect ( slot<Args...>& slot ) { m_slots.remove ( &slot ); slot.m_signals.remove ( this ); }
 };
