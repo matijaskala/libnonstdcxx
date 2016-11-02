@@ -42,7 +42,7 @@ struct tuple_index {
     tuple_index ( tuple_index&& other )
     : _M_data{other._M_data}
     , _M_count{other._M_count} {
-        other._M_data = 0;
+        other._M_data = nullptr;
         other._M_count = 0;
     }
     ~tuple_index () { delete[] _M_data; }
@@ -96,12 +96,22 @@ private:
     std::size_t _M_count;
 };
 
-template <typename _Tp>
+template <typename>
 struct _StaticTupleIdHelper;
 
 template <typename _FirstType, typename... _OtherTypes>
 struct _StaticTupleIdHelper<std::tuple<_FirstType, _OtherTypes...>> {
-    static auto& first () { return typeid(_FirstType); }
+    static void get ( std::type_index* data ) {
+        ::new(data) std::type_index{typeid(_FirstType)};
+        _StaticTupleIdHelper<std::tuple<_OtherTypes...>>::get(data + 1);
+    }
+};
+
+template<>
+struct _StaticTupleIdHelper<std::tuple<>> {
+    static void get ( std::type_index* data ) {
+        (void)data;
+    }
 };
 
 template <typename... _Types>
@@ -109,9 +119,8 @@ struct _StaticTupleIdHelper<std::pair<_Types...>> : _StaticTupleIdHelper<std::tu
 
 template <typename _Tp>
 tuple_index static_tupleid ( const _Tp& ) {
-    tuple_index index{std::tuple_size<_Tp>()()};
-    for ( std::size_t i = 0; i < index._M_count; i++ )
-        ::new(index._M_data + i) std::type_index{_StaticTupleIdHelper<_Tp>::first()};
+    tuple_index index{std::tuple_size<_Tp>{}};
+    _StaticTupleIdHelper<_Tp>::get(index._M_data);
     return index;
 }
 
@@ -125,29 +134,36 @@ tuple_index static_typeid () {
     return static_tupleid<std::tuple<_Types...>>();
 }
 
-template <typename _Tp>
+template <typename, std::size_t = 0>
 struct _DynamicTupleIdHelper;
 
-template <typename _FirstType, typename... _OtherTypes>
-struct _DynamicTupleIdHelper<std::tuple<_FirstType, _OtherTypes...>> {
-    static auto& first ( const std::tuple<_FirstType, _OtherTypes...>& tuple ) { return typeid(std::get<0> ( tuple )); }
+template <typename... _Types, std::size_t __i>
+struct _DynamicTupleIdHelper<std::tuple<_Types...>, __i> {
+    static void get ( std::type_index* data, const std::tuple<_Types...>& tuple ) {
+        ::new(data) std::type_index{typeid(std::get<__i> ( tuple ))};
+        _DynamicTupleIdHelper<std::tuple<_Types...>, __i + 1>::get (data + 1, tuple);
+    }
 };
 
-template <>
-struct _DynamicTupleIdHelper<std::tuple<>> {
-    static std::type_index& first ( const std::tuple<>& ) { throw /* silence warnings */; }
+template <typename... _Types>
+struct _DynamicTupleIdHelper<std::tuple<_Types...>, (std::size_t)std::tuple_size<std::tuple<_Types...>>{}> {
+    static void get ( std::type_index* data, const std::tuple<_Types...>& tuple ) {
+        (void)data; (void)tuple;
+    }
 };
 
-template <typename _Tp1, typename _Tp2>
-struct _DynamicTupleIdHelper<std::pair<_Tp1, _Tp2>> {
-    static auto& first ( const std::pair<_Tp1, _Tp2>& pair ) { return typeid(std::get<0> ( pair )); }
+template <typename _Tp1, typename _Tp2, std::size_t __i>
+struct _DynamicTupleIdHelper<std::pair<_Tp1, _Tp2>, __i> {
+    static void get ( std::type_index* data, const std::pair<_Tp1, _Tp2>& pair ) {
+        ::new(data + 0) std::type_index{typeid(std::get<0> ( pair ))};
+        ::new(data + 1) std::type_index{typeid(std::get<1> ( pair ))};
+    }
 };
 
 template <typename _Tp>
 tuple_index dynamic_tupleid ( const _Tp& __tp ) {
-    tuple_index index{std::tuple_size<_Tp>()()};
-    for ( std::size_t i = 0; i < index._M_count; i++ )
-        ::new(index._M_data + i) std::type_index{_DynamicTupleIdHelper<_Tp>::first(__tp)};
+    tuple_index index{std::tuple_size<_Tp>{}};
+    _DynamicTupleIdHelper<_Tp>::get(index._M_data, __tp);
     return index;
 }
 
@@ -178,7 +194,7 @@ private:
 
 struct _TupleIdBase {
     virtual ~_TupleIdBase() = default;
-    virtual tuple_info operator[] ( int i ) { throw std::out_of_range ( "tuple_info::operator[]" ); }
+    virtual tuple_info operator[] ( int ) { throw std::out_of_range ( "tuple_info::operator[]" ); }
     virtual operator std::type_index() { throw std::bad_typeid{}; }
     virtual std::string name() = 0;
     virtual int count() = 0;
