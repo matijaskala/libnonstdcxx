@@ -28,7 +28,7 @@ uint_least32_t* utf8_to_utf32 ( const char* __src, uint_least32_t* __dst, size_t
     bool alloc = !__dst;
     if (alloc)
         __dst = malloc(__len * 4 + 4);
-    for (int i = 0; i < __len; i++) {
+    for (size_t i = 0; i < __len; i++) {
         if (U8_IS_SINGLE(*__src)) {
             __dst[i] = *(__src++);
             continue;

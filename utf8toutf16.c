@@ -29,7 +29,7 @@ uint_least16_t* utf8_to_utf16 ( const char* __src, uint_least16_t* __dst, size_t
     bool alloc = !__dst;
     if (alloc)
         __dst = malloc(__len * 4 + 2);
-    for (int i = 0; i < __len; i++) {
+    for (size_t i = 0; i < __len; i++) {
         if (U8_IS_SINGLE(*__src)) {
             __dst[i] = *(__src++);
             continue;
