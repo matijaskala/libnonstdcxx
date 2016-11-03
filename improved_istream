@@ -44,7 +44,7 @@ class improved_istream : public std::istream {
 public:
     improved_istream() = default;
     improved_istream(improved_istream&& __rhs)
-        : basic_istream{std::move(__rhs)}
+        : basic_istream{std::forward<basic_istream>(__rhs)}
         , _M_trail_char16{__rhs._M_trail_char16}
         { __rhs._M_trail_char16 = u'\0'; }
     explicit improved_istream(std::streambuf* __sb) : basic_istream{__sb} {}
@@ -88,7 +88,7 @@ public:
     improved_istream& operator>>(char16_t& __c);
     improved_istream& operator>>(char32_t& __c);
 
-    improved_istream& operator>>(char* __s) { std::operator>>(*this, __s); return *this; }
+    improved_istream& operator>>(char* __s) { static_cast<basic_istream&>(*this) >> __s; return *this; }
     improved_istream& operator>>(wchar_t* __s);
     improved_istream& operator>>(char16_t* __s);
     improved_istream& operator>>(char32_t* __s);

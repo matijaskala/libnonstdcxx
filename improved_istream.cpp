@@ -21,19 +21,18 @@
 #include <ostream>
 #include "improved_istream"
 
-#define U8_IS_SINGLE(c) !((c) & 0xc0)
-#define U8_IS_LEAD(c) (static_cast<std::uint8_t>((c) - 0xc0) < 0x3e)
+#define U8_IS_SINGLE(c) !((c) & 0x80)
 #define U8_IS_TRAIL(c) (((c) & 0xc0) == 0x80)
 #define U16_LEAD(c) static_cast<char16_t>(((c) >> 10) + 0xd7c0)
 #define U16_TRAIL(c) static_cast<char16_t>(((c) & 0x3ff) | 0xdc00)
 
 using namespace non_std;
 
-static uint8_t _c8len ( char __c ) {
-    if (!U8_IS_LEAD(__c))
+static std::uint8_t _c8len ( std::uint8_t __c ) {
+    if (__c < 0xc0 || __c > 0xfd)
         return 1;
-    uint8_t len = 1;
-    while (__c >= 0xff << (7 - len))
+    std::uint8_t len = 1;
+    while (__c >= static_cast<std::uint8_t> (0xff << (7 - len)))
         len++;
     return len;
 }
