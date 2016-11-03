@@ -51,6 +51,7 @@ install(FILES
     funcid
     improved_istream
     lexical_cast
+    nullref
     runtime_cast
     signal
     stdio_sync_filebuf
