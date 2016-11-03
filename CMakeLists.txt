@@ -36,10 +36,6 @@ target_compile_features(nonstdc++-extra
     PUBLIC cxx_attributes cxx_nullptr cxx_variadic_templates
     PRIVATE cxx_auto_type cxx_range_for)
 
-install(TARGETS char32 nonstdc++ nonstdc++-extra EXPORT LibNonStdC++Targets
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib)
 install(FILES
     char32.h
 
@@ -59,7 +55,16 @@ install(FILES
     traits
     tupleid
     xterm
-DESTINATION include/nonstd)
+DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/nonstd")
+
+install(TARGETS
+    char32
+    nonstdc++
+    nonstdc++-extra
+EXPORT LibNonStdC++Targets
+RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
 install(FILES LibNonStdC++Config.cmake DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/LibNonStdC++")
 install(EXPORT LibNonStdC++Targets DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/LibNonStdC++")
