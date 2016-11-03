@@ -58,6 +58,9 @@ static std::string mangle_PK ( std::string pk )
 
 static std::string mangle_type_noPK ( std::string type )
 {
+    if ( type.empty() )
+        return {};
+
     if ( type == "void" )
         return "v";
     if ( type == "short" )
@@ -100,7 +103,7 @@ static std::string mangle_type_noPK ( std::string type )
         return "o";
 
     std::string ret;
-    ret += '0' + type.length();
+    ret += std::to_string(type.length());
     ret += type;
     return ret;
 }
@@ -121,10 +124,8 @@ std::string non_std::mangle_symbol (std::string symbol)
         else if ( symbol[i] == '\0' )
         {
             if ( !n.empty() )
-            {
-                ret += '0' + n.length();
-                ret += n;
-            }
+                ret += std::to_string(n.length());
+            ret += n;
             if ( is_member )
                 return ret + 'E';
             else
@@ -139,10 +140,8 @@ std::string non_std::mangle_symbol (std::string symbol)
             if ( ret.length() == 2 )
             {
                 ret += 'N';
-                std::size_t p;
-                for ( auto t = i; t != std::string::npos; t = symbol.find ( ')', t + 1 ) )
-                    p = t;
-                if ( symbol[p] == ')' )
+                std::size_t p = symbol.rfind ( ')' );
+                if ( i < p && p != std::string::npos )
                 {
                     do {
                         p++;
@@ -161,13 +160,15 @@ std::string non_std::mangle_symbol (std::string symbol)
                         throw std::runtime_error ( std::string{} + "unexpected character '" + symbol[p] + "' in symbol '" + symbol +"'" );
                 }
             }
-            ret += '0' + n.length();
+            if ( !n.empty() )
+                ret += std::to_string(n.length());
             ret += n;
             n.clear();
         }
         else if ( symbol[i] == '(' )
         {
-            ret += '0' + n.length();
+            if ( !n.empty() )
+                ret += std::to_string(n.length());
             ret += n;
             auto params_str = symbol.substr(i);
             auto end = params_str.find_last_of(')');
@@ -225,7 +226,7 @@ std::string non_std::mangle_symbol (std::string symbol)
                         if ( types[t] == mangled )
                         {
                             ret += 'S';
-                            ret += '0' + t;
+                            ret += std::to_string(t);
                             ret += '_';
                             break;
                         }
@@ -238,6 +239,19 @@ std::string non_std::mangle_symbol (std::string symbol)
             }
 
             return ret;
+        }
+        else if ( symbol[i] == '<' ) {
+            ret += std::to_string(n.length());
+            ret += n;
+            ret += 'I';
+            do {
+                std::size_t t = i;
+                i = symbol.find_first_of(",>", i);
+                ret += mangle_type_noPK(symbol.substr(t + 1, i - t - 1));
+            } while ( symbol[i] != '>' );
+            ret += 'E';
+            i++;
+            n.clear();
         }
         else if ( symbol[i] == '_' || isalnum(symbol[i]) )
             n += symbol[i];
