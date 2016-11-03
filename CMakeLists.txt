@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.8.12)
 
 find_package(ECM 1.3.0 REQUIRED NO_MODULE)
 
+include(GNUInstallDirs)
 include("${ECM_MODULE_DIR}/ECMUninstallTarget.cmake")
 
 add_library(char32 SHARED
@@ -35,7 +36,7 @@ target_compile_features(nonstdc++-extra
     PUBLIC cxx_attributes cxx_nullptr cxx_variadic_templates
     PRIVATE cxx_auto_type cxx_range_for)
 
-install(TARGETS char32 nonstdc++ nonstdc++-extra
+install(TARGETS char32 nonstdc++ nonstdc++-extra EXPORT LibNonStdC++Targets
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)
@@ -59,3 +60,6 @@ install(FILES
     tupleid
     xterm
 DESTINATION include/nonstd)
+
+install(FILES LibNonStdC++Config.cmake DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/LibNonStdC++")
+install(EXPORT LibNonStdC++Targets DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/LibNonStdC++")
