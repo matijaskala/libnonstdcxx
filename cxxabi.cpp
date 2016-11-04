@@ -196,6 +196,9 @@ std::string non_std::mangle_symbol (std::string symbol)
             params.push_back ( params_str.substr(c) );
 
             std::vector<std::string> types;
+            if ( is_member )
+                types.push_back ( n );
+
             for ( auto param: params )
             {
                 std::size_t pos;
@@ -215,25 +218,33 @@ std::string non_std::mangle_symbol (std::string symbol)
                 auto pk = param;
                 while ( (pos = pk.find ( type )) != std::string::npos )
                     pk.erase ( pos, type.length() );
-                ret += mangle_PK(pk);
+
+                auto mangled_PVKR = mangle_PK(pk);
+                while ( mangled_PVKR.back() == 'K' || mangled_PVKR.back() == 'V' )
+                    mangled_PVKR.pop_back();
 
                 if ( mangled.length() == 1 )
-                    ret += mangled;
+                    ret += mangled_PVKR + mangled;
                 else
                 {
                     bool found = false;
                     for ( std::size_t t = 0; t < types.size(); t++ )
-                        if ( types[t] == mangled )
-                        {
-                            ret += 'S';
-                            ret += std::to_string(t);
-                            ret += '_';
-                            break;
-                        }
+                        for ( std::size_t j = 0; j <= mangled_PVKR.length() && !found; j++ )
+                            if ( types[t] == mangled_PVKR.substr(j) + mangled )
+                            {
+                                ret += mangled_PVKR.substr(0, j);
+                                ret += 'S';
+                                if ( t )
+                                    ret += std::to_string ( t - 1 );
+                                ret += '_';
+                                found = true;
+                            }
                     if ( !found )
                     {
+                        ret += mangled_PVKR + mangled;
                         types.push_back ( mangled );
-                        ret += mangled;
+                        for ( auto i = mangled_PVKR.rbegin(); i != mangled_PVKR.rend(); i++ )
+                            types.push_back ( *i + types.back() );
                     }
                 }
             }
