@@ -113,6 +113,7 @@ std::string non_std::mangle_symbol (std::string symbol)
     bool is_member = false;
     std::string ret = "_Z";
     std::string n;
+    std::vector<std::string> types;
     for (std::size_t i = 0; ; i++)
     {
         if ( symbol[i] == ' ' )
@@ -134,9 +135,9 @@ std::string non_std::mangle_symbol (std::string symbol)
         else if ( symbol[i] == ':' )
         {
             is_member = true;
-            if ( symbol[i+1] != ':' )
-                throw std::runtime_error ( std::string{} + "unexpected character '" + symbol[i+1] + "' in symbol '" + symbol +"'" );
             i++;
+            if ( symbol[i] != ':' )
+                throw std::runtime_error ( std::string{} + "unexpected character '" + symbol[i] + "' in symbol '" + symbol +"'" );
             if ( ret.length() == 2 )
             {
                 ret += 'N';
@@ -160,10 +161,12 @@ std::string non_std::mangle_symbol (std::string symbol)
                         throw std::runtime_error ( std::string{} + "unexpected character '" + symbol[p] + "' in symbol '" + symbol +"'" );
                 }
             }
-            if ( !n.empty() )
-                ret += std::to_string(n.length());
-            ret += n;
-            n.clear();
+            if ( !n.empty() ) {
+                auto tsym = std::to_string(n.length()) + n;
+                types.push_back("N" + tsym + "E");
+                ret += tsym;
+                n.clear();
+            }
         }
         else if ( symbol[i] == '(' )
         {
@@ -194,10 +197,6 @@ std::string non_std::mangle_symbol (std::string symbol)
             for ( auto t = params_str.find_first_of(','); t != std::string::npos; c = t + 1, t = params_str.find_first_of(',', c) )
                 params.push_back ( params_str.substr ( c, t - c ) );
             params.push_back ( params_str.substr(c) );
-
-            std::vector<std::string> types;
-            if ( is_member )
-                types.push_back ( n );
 
             for ( auto param: params )
             {
