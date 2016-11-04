@@ -163,7 +163,16 @@ std::string non_std::mangle_symbol (std::string symbol)
             }
             if ( !n.empty() ) {
                 auto tsym = std::to_string(n.length()) + n;
-                types.push_back("N" + tsym + "E");
+                if ( types.empty() )
+                    types.push_back(tsym);
+                else {
+                    auto n = types.back();
+                    if ( types.size() == 1 )
+                        n.pop_back();
+                    else
+                        n = 'N' + n;
+                    types.push_back(n + tsym + 'E');
+                }
                 ret += tsym;
                 n.clear();
             }
