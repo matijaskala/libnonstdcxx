@@ -4,8 +4,12 @@ cmake_minimum_required(VERSION 2.8.12)
 
 find_package(ECM 1.3.0 REQUIRED NO_MODULE)
 
+set(CMAKE_MODULE_PATH ${ECM_MODULE_DIR})
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 include(GNUInstallDirs)
-include("${ECM_MODULE_DIR}/ECMUninstallTarget.cmake")
+include(ECMUninstallTarget)
 
 add_library(char32 SHARED
     _c32toc8.c
@@ -25,7 +29,7 @@ add_library(nonstdc++ SHARED
     xterm.cpp
 )
 target_compile_features(nonstdc++
-    PUBLIC cxx_return_type_deduction)
+    INTERFACE cxx_return_type_deduction)
 
 add_library(nonstdc++-extra SHARED
     cxxabi.cpp
@@ -33,8 +37,7 @@ add_library(nonstdc++-extra SHARED
     tupleid.cpp
 )
 target_compile_features(nonstdc++-extra
-    PUBLIC cxx_attributes cxx_nullptr cxx_variadic_templates
-    PRIVATE cxx_auto_type cxx_range_for)
+    INTERFACE cxx_attributes cxx_nullptr cxx_variadic_templates)
 
 install(FILES
     char32.h

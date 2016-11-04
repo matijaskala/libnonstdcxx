@@ -26,23 +26,24 @@
 #include <iostream>
 #include <cstdlib>
 
-std::string non_std::demangle ( const char* symbol ) {
+using namespace std;
+static constexpr auto npos = string::npos;
+
+string non_std::demangle ( const char* symbol ) {
     using namespace abi;
     char* demangled_symbol = __cxa_demangle ( symbol, 0, 0, 0 );
-    std::string r;
     if (demangled_symbol) {
-        r = demangled_symbol;
-        std::free ( demangled_symbol );
+        string r = demangled_symbol;
+        free ( demangled_symbol );
+        return r;
     }
-    else {
-        r = "<no type>";
-    }
-    return r;
+    else
+        return "<no type>"s;
 }
 
-static std::string mangle_PK ( std::string pk )
+static string mangle_PK ( string pk )
 {
-    std::string ret;
+    string ret;
     for ( auto i = pk.rbegin(); i != pk.rend(); i++ )
         switch ( *i )
         {
@@ -56,84 +57,81 @@ static std::string mangle_PK ( std::string pk )
     return ret;
 }
 
-static std::string mangle_type_noPK ( std::string type )
+static string mangle_type_noPK ( string type )
 {
     if ( type.empty() )
         return {};
 
-    if ( type == "void" )
-        return "v";
-    if ( type == "short" )
-        return "s";
-    if ( type == "int" )
-        return "i";
-    if ( type == "long" )
-        return "l";
-    if ( type == "long long" )
-        return "x";
-    if ( type == "unsigned short" )
-        return "t";
-    if ( type == "unsigned int" )
-        return "j";
-    if ( type == "unsigned long" )
-        return "m";
-    if ( type == "unsigned long long" )
-        return "y";
-    if ( type == "float" )
-        return "f";
-    if ( type == "double" )
-        return "d";
-    if ( type == "long double" )
-        return "e";
-    if ( type == "bool" )
-        return "b";
-    if ( type == "char" )
-        return "c";
-    if ( type == "signed char" )
-        return "a";
-    if ( type == "unsigned char" )
-        return "h";
-    if ( type == "wchar_t" )
-        return "w";
-    if ( type == "char16_t" )
-        return "Ds";
-    if ( type == "char32_t" )
-        return "Di";
-    if ( type == "std::nullptr_t" || type == "decltype(nullptr)" )
-        return "Dn";
-    if ( type == "__int128" )
-        return "n";
-    if ( type == "unsigned __int128" )
-        return "o";
-    if ( type == "__float128" )
-        return "g";
-    if ( type == "..." )
-        return "z";
+    if ( type == "void"s )
+        return "v"s;
+    if ( type == "short"s )
+        return "s"s;
+    if ( type == "int"s )
+        return "i"s;
+    if ( type == "long"s )
+        return "l"s;
+    if ( type == "long long"s )
+        return "x"s;
+    if ( type == "unsigned short"s )
+        return "t"s;
+    if ( type == "unsigned int"s )
+        return "j"s;
+    if ( type == "unsigned long"s )
+        return "m"s;
+    if ( type == "unsigned long long"s )
+        return "y"s;
+    if ( type == "float"s )
+        return "f"s;
+    if ( type == "double"s )
+        return "d"s;
+    if ( type == "long double"s )
+        return "e"s;
+    if ( type == "bool"s )
+        return "b"s;
+    if ( type == "char"s )
+        return "c"s;
+    if ( type == "signed char"s )
+        return "a"s;
+    if ( type == "unsigned char"s )
+        return "h"s;
+    if ( type == "wchar_t"s )
+        return "w"s;
+    if ( type == "char16_t"s )
+        return "Ds"s;
+    if ( type == "char32_t"s )
+        return "Di"s;
+    if ( type == "std::nullptr_t"s || type == "decltype(nullptr)"s )
+        return "Dn"s;
+    if ( type == "__int128"s )
+        return "n"s;
+    if ( type == "unsigned __int128"s )
+        return "o"s;
+    if ( type == "__float128"s )
+        return "g"s;
+    if ( type == "..."s )
+        return "z"s;
 
-    std::string ret;
-    ret += std::to_string(type.length());
-    ret += type;
-    return ret;
+    return to_string(type.length()) + type;
 }
 
-std::string non_std::mangle_symbol (std::string symbol)
+string non_std::mangle_symbol (string symbol)
 {
     bool is_member = false;
-    std::string ret = "_Z";
-    std::string n;
-    std::vector<std::string> types;
-    for (std::size_t i = 0; ; i++)
+    string ret = "_Z";
+    string n;
+    vector<string> types;
+    for (size_t i = 0; ; i++)
     {
         if ( symbol[i] == ' ' )
         {
-            std::cerr << "unexpected whitespace in symbol '" << symbol << "'" << std::endl;
+            cerr << "unexpected whitespace in symbol '" << symbol << "'" << endl;
             if ( !n.empty() && ( symbol[i+1] == '_' || isalnum(symbol[i+1]) ) )
                 n += ' ';
         }
         else if ( symbol[i] == '\0' )
         {
             if ( !n.empty() )
-                ret += std::to_string(n.length());
+                ret += to_string(n.length());
             ret += n;
             if ( is_member )
                 return ret + 'E';
@@ -145,17 +143,17 @@ std::string non_std::mangle_symbol (std::string symbol)
             is_member = true;
             i++;
             if ( symbol[i] != ':' )
-                throw std::runtime_error ( std::string{} + "unexpected character '" + symbol[i] + "' in symbol '" + symbol +"'" );
+                throw runtime_error ( "unexpected character '"s + symbol[i] + "' in symbol '"s + symbol + "'"s );
             if ( ret.length() == 2 )
             {
                 ret += 'N';
-                std::size_t p = symbol.rfind ( ')' );
-                if ( i < p && p != std::string::npos )
+                size_t p = symbol.rfind ( ')' );
+                if ( i < p && p != npos )
                 {
                     do {
                         p++;
                     } while ( symbol[p] == ' ' );
-                    if ( symbol.substr ( p, 5 ) == "const" )
+                    if ( symbol.substr ( p, 5 ) == "const"s )
                     {
                         ret += 'K';
                         p += 5;
@@ -163,14 +161,14 @@ std::string non_std::mangle_symbol (std::string symbol)
                             p++;
                         } while ( symbol[p] == ' ' );
                         if ( symbol[p] )
-                            throw std::runtime_error ( std::string{} + "unexpected character '" + symbol[p] + "' in symbol '" + symbol +"'" );
+                            throw runtime_error ( "unexpected character '"s + symbol[p] + "' in symbol '"s + symbol + "'"s );
                     }
                     else if ( symbol[p] )
-                        throw std::runtime_error ( std::string{} + "unexpected character '" + symbol[p] + "' in symbol '" + symbol +"'" );
+                        throw runtime_error ( "unexpected character '"s + symbol[p] + "' in symbol '"s + symbol + "'"s );
                 }
             }
             if ( !n.empty() ) {
-                auto tsym = std::to_string(n.length()) + n;
+                auto tsym = to_string(n.length()) + n;
                 if ( types.empty() )
                     types.push_back(tsym);
                 else {
@@ -188,12 +186,12 @@ std::string non_std::mangle_symbol (std::string symbol)
         else if ( symbol[i] == '(' )
         {
             if ( !n.empty() )
-                ret += std::to_string(n.length());
+                ret += to_string(n.length());
             ret += n;
             auto params_str = symbol.substr(i);
             auto end = params_str.find_last_of(')');
-            if ( end == std::string::npos )
-                throw std::runtime_error ( std::string{} + "unexpected character '(' in symbol '" + symbol +"'" );
+            if ( end == npos )
+                throw runtime_error ( "unexpected character '(' in symbol '"s + symbol + "'"s );
             if ( is_member )
                 ret += 'E';
             else
@@ -203,27 +201,27 @@ std::string non_std::mangle_symbol (std::string symbol)
                     p++;
                 } while ( p[0] == ' ' );
                 if ( p[0] )
-                    throw std::runtime_error ( std::string{} + "unexpected character '" + p[0] + "' in symbol '" + symbol +"'" );
+                    throw runtime_error ( "unexpected character '"s + p[0] + "' in symbol '"s + symbol + "'"s );
             }
             params_str = params_str.substr ( 1, end - 1 );
             if ( params_str.empty() )
                 return ret + 'v';
-            std::vector<std::string> params;
+            vector<string> params;
             params.reserve ( params_str.length() / 2 );
-            std::size_t c = 0;
-            for ( auto t = params_str.find_first_of(','); t != std::string::npos; c = t + 1, t = params_str.find_first_of(',', c) )
+            size_t c = 0;
+            for ( auto t = params_str.find_first_of(','); t != npos; c = t + 1, t = params_str.find_first_of(',', c) )
                 params.push_back ( params_str.substr ( c, t - c ) );
             params.push_back ( params_str.substr(c) );
 
             for ( auto param: params )
             {
-                std::size_t pos;
-                std::string type = param;
-                while ( (pos = type.find ( "const" )) != std::string::npos )
+                size_t pos;
+                string type = param;
+                while ( (pos = type.find ( "const" )) != npos )
                     type.erase ( pos, 5 );
-                while ( (pos = type.find ( "*" )) != std::string::npos )
+                while ( (pos = type.find ( "*" )) != npos )
                     type.erase ( pos, 1 );
-                while ( (pos = type.find ( "  " )) != std::string::npos )
+                while ( (pos = type.find ( "  " )) != npos )
                     type.replace ( pos, 2, " " );
                 if ( type.front() == ' ' )
                     type.erase ( 0, 1 );
@@ -232,7 +230,7 @@ std::string non_std::mangle_symbol (std::string symbol)
 
                 auto mangled = mangle_type_noPK(type);
                 auto pk = param;
-                while ( (pos = pk.find ( type )) != std::string::npos )
+                while ( (pos = pk.find ( type )) != npos )
                     pk.erase ( pos, type.length() );
 
                 auto mangled_PVKR = mangle_PK(pk);
@@ -244,14 +242,14 @@ std::string non_std::mangle_symbol (std::string symbol)
                 else
                 {
                     bool found = false;
-                    for ( std::size_t t = 0; t < types.size(); t++ )
-                        for ( std::size_t j = 0; j <= mangled_PVKR.length() && !found; j++ )
+                    for ( size_t t = 0; t < types.size(); t++ )
+                        for ( size_t j = 0; j <= mangled_PVKR.length() && !found; j++ )
                             if ( types[t] == mangled_PVKR.substr(j) + mangled )
                             {
                                 ret += mangled_PVKR.substr(0, j);
                                 ret += 'S';
                                 if ( t )
-                                    ret += std::to_string ( t - 1 );
+                                    ret += to_string ( t - 1 );
                                 ret += '_';
                                 found = true;
                             }
@@ -268,11 +266,11 @@ std::string non_std::mangle_symbol (std::string symbol)
             return ret;
         }
         else if ( symbol[i] == '<' ) {
-            ret += std::to_string(n.length());
+            ret += to_string(n.length());
             ret += n;
             ret += 'I';
             do {
-                std::size_t t = i;
+                size_t t = i;
                 i = symbol.find_first_of(",>", i);
                 ret += mangle_type_noPK(symbol.substr(t + 1, i - t - 1));
             } while ( symbol[i] != '>' );
@@ -285,10 +283,10 @@ std::string non_std::mangle_symbol (std::string symbol)
     }
 }
 #else // __GNUC__
-std::string non_std::demangle ( const char* symbol ) {
-	return "";
+string non_std::demangle ( const char* symbol ) {
+	return ""s;
 }
-std::string non_std::mangle_symbol (std::string symbol) {
-	return "";
+string non_std::mangle_symbol (string symbol) {
+	return ""s;
 }
 #endif // __GNUC__
