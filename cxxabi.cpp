@@ -85,6 +85,8 @@ static std::string mangle_type_noPK ( std::string type )
         return "d";
     if ( type == "long double" )
         return "e";
+    if ( type == "bool" )
+        return "b";
     if ( type == "char" )
         return "c";
     if ( type == "signed char" )
@@ -97,10 +99,16 @@ static std::string mangle_type_noPK ( std::string type )
         return "Ds";
     if ( type == "char32_t" )
         return "Di";
+    if ( type == "std::nullptr_t" || type == "decltype(nullptr)" )
+        return "Dn";
     if ( type == "__int128" )
         return "n";
     if ( type == "unsigned __int128" )
         return "o";
+    if ( type == "__float128" )
+        return "g";
+    if ( type == "..." )
+        return "z";
 
     std::string ret;
     ret += std::to_string(type.length());
