@@ -34,7 +34,6 @@ target_compile_features(nonstdc++
 add_library(nonstdc++-extra SHARED
     cxxabi.cpp
     improved_istream.cpp
-    tupleid.cpp
 )
 target_compile_features(nonstdc++-extra
     INTERFACE cxx_attributes cxx_nullptr cxx_variadic_templates)
