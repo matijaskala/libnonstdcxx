@@ -37,7 +37,7 @@ struct tuple_index {
     tuple_index ( const tuple_index& other )
     : tuple_index{other._M_count} {
         for ( std::size_t i = 0; i < _M_count; i++ )
-            ::new(_M_data + i) std::type_index{other._M_data[i]};
+            _M_data[i] = other._M_data[i];
     }
     tuple_index ( tuple_index&& other )
     : _M_data{other._M_data}
@@ -68,17 +68,17 @@ struct tuple_index {
     std::string name () const {
         if ( !_M_count )
             return "";
-        std::string ret = demangle(_M_data->name());
+        std::string ret = demangle(_M_data[0]->name());
         for ( std::size_t i = 1; i < _M_count; i++ ) {
             ret += ", ";
-            ret += demangle(_M_data[i].name());
+            ret += demangle(_M_data[i]->name());
         }
         return ret;
     }
     std::string name ( std::size_t i ) const {
         if ( i >= _M_count )
             throw std::out_of_range ( "tuple_index::name(size_t)" );
-        return demangle(_M_data[i].name());
+        return demangle(_M_data[i]->name());
     }
 #undef demangle
 
@@ -90,32 +90,24 @@ private:
     template <typename _Tp>
     friend tuple_index static_tupleid ( const _Tp& = nullref );
     tuple_index ( std::size_t count )
-    : _M_data{static_cast<std::type_index*>(::operator new[](sizeof(std::type_index)*count))}
+    : _M_data{new const std::type_info*[count]}
     , _M_count{count} {}
-    std::type_index* _M_data;
+    const std::type_info** _M_data;
     std::size_t _M_count;
 };
 
-template <typename>
-struct _StaticTupleIdHelper;
-
-template <typename _FirstType, typename... _OtherTypes>
-struct _StaticTupleIdHelper<std::tuple<_FirstType, _OtherTypes...>> {
-    static void get ( std::type_index* data ) {
-        ::new(data) std::type_index{typeid(_FirstType)};
-        _StaticTupleIdHelper<std::tuple<_OtherTypes...>>::get(data + 1);
+template <typename _Tp, std::size_t __i = 0>
+struct _StaticTupleIdHelper {
+    static void get ( const std::type_info** data ) {
+        data[__i] = &typeid(typename std::tuple_element<__i, _Tp>::type);
+        _StaticTupleIdHelper<_Tp, __i + 1>::get(data);
     }
 };
 
-template<>
-struct _StaticTupleIdHelper<std::tuple<>> {
-    static void get ( std::type_index* data ) {
-        (void)data;
-    }
+template <typename _Tp>
+struct _StaticTupleIdHelper<_Tp, (std::size_t)std::tuple_size<_Tp>{}> {
+    static void get ( const std::type_info** ) {}
 };
-
-template <typename... _Types>
-struct _StaticTupleIdHelper<std::pair<_Types...>> : _StaticTupleIdHelper<std::tuple<_Types...>> {};
 
 template <typename _Tp>
 tuple_index static_tupleid ( const _Tp& ) {
@@ -125,7 +117,7 @@ tuple_index static_tupleid ( const _Tp& ) {
 }
 
 template <typename... _Types>
-tuple_index static_typeid ( const _Types&... ) {
+tuple_index static_typeid ( _Types&&... ) {
     return static_tupleid<std::tuple<_Types...>>();
 }
 
@@ -134,30 +126,17 @@ tuple_index static_typeid () {
     return static_tupleid<std::tuple<_Types...>>();
 }
 
-template <typename, std::size_t = 0>
-struct _DynamicTupleIdHelper;
-
-template <typename... _Types, std::size_t __i>
-struct _DynamicTupleIdHelper<std::tuple<_Types...>, __i> {
-    static void get ( std::type_index* data, const std::tuple<_Types...>& tuple ) {
-        ::new(data) std::type_index{typeid(std::get<__i> ( tuple ))};
-        _DynamicTupleIdHelper<std::tuple<_Types...>, __i + 1>::get (data + 1, tuple);
+template <typename _Tp, std::size_t __i = 0>
+struct _DynamicTupleIdHelper {
+    static void get ( const std::type_info** data, const _Tp& tuple ) {
+        data[__i] = &typeid(std::get<__i> ( tuple ));
+        _DynamicTupleIdHelper<_Tp, __i + 1>::get(data, tuple);
     }
 };
 
-template <typename... _Types>
-struct _DynamicTupleIdHelper<std::tuple<_Types...>, (std::size_t)std::tuple_size<std::tuple<_Types...>>{}> {
-    static void get ( std::type_index* data, const std::tuple<_Types...>& tuple ) {
-        (void)data; (void)tuple;
-    }
-};
-
-template <typename _Tp1, typename _Tp2, std::size_t __i>
-struct _DynamicTupleIdHelper<std::pair<_Tp1, _Tp2>, __i> {
-    static void get ( std::type_index* data, const std::pair<_Tp1, _Tp2>& pair ) {
-        ::new(data + 0) std::type_index{typeid(std::get<0> ( pair ))};
-        ::new(data + 1) std::type_index{typeid(std::get<1> ( pair ))};
-    }
+template <typename _Tp>
+struct _DynamicTupleIdHelper<_Tp, (std::size_t)std::tuple_size<_Tp>{}> {
+    static void get ( const std::type_info**, const _Tp& ) {}
 };
 
 template <typename _Tp>
@@ -168,8 +147,8 @@ tuple_index dynamic_tupleid ( const _Tp& __tp ) {
 }
 
 template <typename... _Types>
-tuple_index dynamic_typeid ( const _Types&... __types ) {
-    return dynamic_tupleid(std::tuple<const _Types&...>{__types...});
+tuple_index dynamic_typeid ( _Types&&... __types ) {
+    return dynamic_tupleid(std::forward_as_tuple(std::forward<_Types>(__types)...));
 }
 
 template <typename... _Types>
