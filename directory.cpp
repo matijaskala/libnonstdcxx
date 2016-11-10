@@ -25,10 +25,8 @@
 using namespace std;
 using namespace non_std;
 
-directory::directory ( string path )
+directory::directory ( string path ) : m_entries{}, m_path{path}
 {
-    m_path = path;
-
     auto dir = opendir ( path.c_str() );
     if ( !dir )
         return;
