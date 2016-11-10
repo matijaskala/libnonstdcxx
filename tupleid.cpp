@@ -20,6 +20,7 @@
 #include "tupleid"
 
 using namespace non_std;
+using namespace old_tupleid;
 
 tuple_info::tuple_info ( _TupleIdBase* __tupleid ) : _M_tupleid{__tupleid} {}
 
