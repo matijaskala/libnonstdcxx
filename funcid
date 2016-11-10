@@ -23,15 +23,15 @@
 #include "tupleid"
 
 struct func_info {
-    tuple_info args;
-    tuple_info return_type;
+    non_std::tuple_index args;
+    non_std::tuple_index return_type;
 };
 
 template <typename _ReturnType, typename... _Args>
-func_info __funcid(_ReturnType(*__func)(_Args...)) { return {tupleid(std::tuple<_Args...>),typeid2(_ReturnType)}; }
+func_info __funcid(_ReturnType(*__func)(_Args...)) { return {static_typeid<_Args...>(),static_typeid<_ReturnType>()}; }
 
 template <typename _ReturnType, typename _Class, typename... _Args>
-func_info __funcid(_ReturnType(_Class::*__func)(_Args...)) { return {tupleid(std::tuple<_Args...>),typeid2(_ReturnType)}; }
+func_info __funcid(_ReturnType(_Class::*__func)(_Args...)) { return {static_typeid<_Args...>(),static_typeid<_ReturnType>()}; }
 
 #define funcid(FUNC) __funcid(&FUNC)
 #define func_name(FUNC) (#FUNC + ( "(" + funcid(FUNC).args.name() + ")" ) )
