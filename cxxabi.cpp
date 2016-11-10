@@ -27,7 +27,21 @@
 #include <cstdlib>
 
 using namespace std;
+
+class bad_symbol : public exception {
+    string _M_msg;
+public:
+    bad_symbol ( const string& symbol, size_t pos );
+    virtual const char* what() const noexcept {
+        return _M_msg.c_str();
+    }
+};
+
 static constexpr auto npos = string::npos;
+
+bad_symbol::bad_symbol ( const string& symbol, size_t pos = npos )
+    : _M_msg{"unexpected character"s + (pos == npos ? " "s : " '"s + symbol[pos] + "' "s)
+    + "in symbol '"s + symbol + "'"s + (pos == npos ? ""s : ":"s + to_string(pos))} {}
 
 string non_std::demangle ( const char* symbol ) {
     using namespace abi;
@@ -143,7 +157,7 @@ string non_std::mangle_symbol (string symbol)
             is_member = true;
             i++;
             if ( symbol[i] != ':' )
-                throw runtime_error ( "unexpected character '"s + symbol[i] + "' in symbol '"s + symbol + "'"s );
+                throw bad_symbol{symbol,i};
             if ( ret.length() == 2 )
             {
                 ret += 'N';
@@ -161,10 +175,10 @@ string non_std::mangle_symbol (string symbol)
                             p++;
                         } while ( symbol[p] == ' ' );
                         if ( symbol[p] )
-                            throw runtime_error ( "unexpected character '"s + symbol[p] + "' in symbol '"s + symbol + "'"s );
+                            throw bad_symbol{symbol,p};
                     }
                     else if ( symbol[p] )
-                        throw runtime_error ( "unexpected character '"s + symbol[p] + "' in symbol '"s + symbol + "'"s );
+                        throw bad_symbol{symbol,p};
                 }
             }
             if ( !n.empty() ) {
@@ -191,17 +205,17 @@ string non_std::mangle_symbol (string symbol)
             auto params_str = symbol.substr(i);
             auto end = params_str.find_last_of(')');
             if ( end == npos )
-                throw runtime_error ( "unexpected character '(' in symbol '"s + symbol + "'"s );
+                throw bad_symbol{symbol,i};
             if ( is_member )
                 ret += 'E';
             else
             {
-                auto p = params_str.c_str() + end;
+                auto p = end;
                 do {
                     p++;
-                } while ( p[0] == ' ' );
-                if ( p[0] )
-                    throw runtime_error ( "unexpected character '"s + p[0] + "' in symbol '"s + symbol + "'"s );
+                } while ( params_str[p] == ' ' );
+                if ( params_str[p] )
+                    throw bad_symbol{symbol, i + p};
             }
             params_str = params_str.substr ( 1, end - 1 );
             if ( params_str.empty() )
