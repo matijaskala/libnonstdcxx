@@ -98,8 +98,8 @@ class basic_variant {
             _Type& value = reinterpret_cast<_Type&>(actual_value);
             ~get ( ) { value.~_Type(); }
             template< typename _Arg >
-            void operator() ( _Arg* __arg ) { new(&value) _Type{runtime_cast<_Type> ( *__arg )}; }
-            void operator() ( _Type* data ) { new(&value) _Type{*data}; }
+            void operator() ( _Arg* __arg ) { new(&value) _Type(runtime_cast<_Type> ( *__arg )); }
+            void operator() ( _Type* data ) { new(&value) _Type(*data); }
             void operator() ( null_t ) { throw bad_get(); }
         };
 
@@ -109,8 +109,8 @@ class basic_variant {
             _Type& value = reinterpret_cast<_Type&>(actual_value);
             ~get ( ) { value.~_Type(); }
             template< typename _Arg >
-            void operator() ( _Arg* __arg ) { new(&value) _Type{runtime_cast<_Type> ( *__arg )}; }
-            void operator() ( _Type* data ) { new(&value) _Type{std::move ( *data )}; }
+            void operator() ( _Arg* __arg ) { new(&value) _Type(runtime_cast<_Type> ( *__arg )); }
+            void operator() ( _Type* data ) { new(&value) _Type(std::move ( *data )); }
             void operator() ( null_t ) { throw bad_get(); }
         };
 
