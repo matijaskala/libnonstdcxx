@@ -66,14 +66,14 @@ template< typename _Res, typename _Ret, typename _Class > inline __for_pointer< 
 template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::uintptr_t s ) { return reinterpret_cast<_Res> ( s ); }
 template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::string s ) { return runtime_cast<_Res> ( lexical_cast<void*> ( s ) ); }
 template< typename _Res > inline __for_pointer< _Res > runtime_cast ( char s[] ) { return runtime_cast<_Res> ( lexical_cast<void*> ( s ) ); }
-template< typename _Res, typename _Arg > inline __for_non_scalar< _Res > runtime_cast ( _Arg* s ) { throw non_std::bad_runtime_cast{typeid2(_Res).name(),typeid2(_Arg*).name()}; }
+template< typename _Res, typename _Arg > inline __for_non_scalar< _Res > runtime_cast ( _Arg* s ) { throw non_std::bad_runtime_cast{static_typeid<_Res>().name(), static_typeid(s).name()}; }
 
 template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value
  && !std::is_same<_Res,_Arg>::value && std::is_copy_constructible<_Arg>::value,_Res>::type runtime_cast ( _Arg s )
-{ throw non_std::bad_runtime_cast{typeid2(_Res).name(),typeid2(_Arg).name()}; }
+{ throw non_std::bad_runtime_cast{static_typeid<_Res>().name(), static_typeid(s).name()}; }
 template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value
  && !std::is_same<_Res,_Arg>::value && !std::is_copy_constructible<_Arg>::value,_Res>::type runtime_cast ( const _Arg& s )
-{ throw non_std::bad_runtime_cast{typeid2(_Res).name(),typeid2(_Arg).name()}; }
+{ throw non_std::bad_runtime_cast{static_typeid<_Res>().name(), static_typeid(s).name()}; }
 template< typename _Res > inline _Res runtime_cast ( const char* s ) { return runtime_cast<_Res> ( static_cast<std::string> ( s ) ); }
 
 template<> inline std::string runtime_cast<std::string> ( char s ) { return std::string{s}; }
@@ -93,6 +93,6 @@ template<> inline std::string runtime_cast<std::string> ( void* s ) { return lex
 
 template< typename _Type > inline typename std::enable_if<std::is_copy_constructible<_Type>::value,_Type>::type runtime_cast ( _Type s ) { return s; }
 template< typename _Type > inline typename std::enable_if<!std::is_copy_constructible<_Type>::value,_Type>::type runtime_cast ( const _Type& s )
-{ throw non_std::bad_runtime_cast{typeid2(_Type).name(),typeid2(const _Type&).name()}; }
+{ throw non_std::bad_runtime_cast{static_typeid<_Type>().name(), static_typeid(s).name()}; }
 
 #endif // NON_STD_RUNTIME_CAST
