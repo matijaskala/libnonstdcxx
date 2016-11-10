@@ -23,7 +23,7 @@
 #include "lexical_cast"
 #include "tupleid"
 
-namespace non_std [[gnu::visibility("default")]]
+namespace non_std
 {
 
 class bad_runtime_cast : public std::bad_cast {

@@ -23,10 +23,10 @@
 #include <string>
 #include <vector>
 
-namespace non_std [[gnu::visibility("default")]]
+namespace non_std
 {
 
-class directory
+class [[gnu::visibility("default")]] directory
 {
 public:
     class entry {
