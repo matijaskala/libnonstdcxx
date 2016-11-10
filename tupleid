@@ -42,7 +42,7 @@ struct tuple_index {
         if ( _M_count != __rhs._M_count )
             return false;
         for ( std::size_t i = 0; i < _M_count; i++ )
-            if ( !(_M_data.get()[i] == __rhs._M_data.get()[i]) )
+            if ( !(*_M_data.get()[i] == *__rhs._M_data.get()[i]) )
                 return false;
         return true;
     }
@@ -50,7 +50,7 @@ struct tuple_index {
         if ( _M_count != __rhs._M_count )
             return true;
         for ( std::size_t i = 0; i < _M_count; i++ )
-            if ( _M_data.get()[i] != __rhs._M_data.get()[i] )
+            if ( *_M_data.get()[i] != *__rhs._M_data.get()[i] )
                 return true;
         return false;
     }
