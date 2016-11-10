@@ -36,20 +36,8 @@ class improved_istream : public std::istream {
         if (exceptions() & __state) throw;
     }
 
-    void swap(improved_istream& __rhs) {
-        basic_istream::swap(__rhs);
-        std::swap(_M_trail_char16, __rhs._M_trail_char16);
-    }
-
 public:
-    improved_istream() = default;
-    improved_istream(improved_istream&& __rhs)
-        : basic_istream{std::forward<basic_istream>(__rhs)}
-        , _M_trail_char16{__rhs._M_trail_char16}
-        { __rhs._M_trail_char16 = u'\0'; }
-    explicit improved_istream(std::streambuf* __sb) : basic_istream{__sb} {}
-
-    improved_istream& operator=(improved_istream&& __rhs) { swap(__rhs); return *this; }
+    using basic_istream::basic_istream;
 
     int_type get() { return basic_istream::get(); }
     improved_istream& get(char& __c) { basic_istream::get(__c); return *this; }
