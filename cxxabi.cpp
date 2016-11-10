@@ -227,7 +227,7 @@ string non_std::mangle_symbol (string symbol)
                 params.push_back ( params_str.substr ( c, t - c ) );
             params.push_back ( params_str.substr(c) );
 
-            for ( auto param: params )
+            for ( auto&& param: params )
             {
                 size_t pos;
                 string type = param;
