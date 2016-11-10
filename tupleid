@@ -31,6 +31,14 @@
 #define tupleid(...) tuple_info::create<__typeof__(__VA_ARGS__)> ()
 #define typeid2(...) tupleid(std::tuple<__typeof__(__VA_ARGS__)>)
 
+namespace non_std {
+    struct tuple_index;
+}
+template <typename _Tp>
+auto dynamic_tupleid ( const _Tp& ) -> non_std::tuple_index;
+template <typename _Tp>
+auto static_tupleid ( const _Tp& = nullref ) -> non_std::tuple_index;
+
 namespace non_std
 {
 
@@ -73,17 +81,16 @@ struct tuple_index {
 
 private:
     template <typename _Tp>
-    friend tuple_index dynamic_tupleid ( _Tp&& tuple );
+    friend auto ::dynamic_tupleid ( const _Tp& ) -> tuple_index;
     template <typename _Tp>
-    friend tuple_index dynamic_tupleid ( const _Tp& tuple );
-    template <typename _Tp>
-    friend tuple_index static_tupleid ( const _Tp& = nullref );
+    friend auto ::static_tupleid ( const _Tp& ) -> tuple_index;
     tuple_index ( std::size_t count )
     : _M_data{new const std::type_info*[count], [] ( const std::type_info** data ) { delete[] data; }}
     , _M_count{count} {}
     std::shared_ptr<const std::type_info*> _M_data;
     std::size_t _M_count;
 };
+}
 
 template <typename _Tp, std::size_t __i = 0>
 struct _StaticTupleIdHelper {
@@ -99,19 +106,19 @@ struct _StaticTupleIdHelper<_Tp, (std::size_t)std::tuple_size<_Tp>{}> {
 };
 
 template <typename _Tp>
-tuple_index static_tupleid ( const _Tp& ) {
-    tuple_index index{std::tuple_size<_Tp>{}};
+auto static_tupleid ( const _Tp& ) -> non_std::tuple_index {
+    non_std::tuple_index index{std::tuple_size<_Tp>{}};
     _StaticTupleIdHelper<_Tp>::get(index._M_data.get());
     return index;
 }
 
 template <typename... _Types>
-tuple_index static_typeid ( _Types&&... ) {
+auto static_typeid ( _Types&&... ) -> non_std::tuple_index {
     return static_tupleid<std::tuple<_Types...>>();
 }
 
 template <typename... _Types>
-tuple_index static_typeid () {
+auto static_typeid () -> non_std::tuple_index {
     return static_tupleid<std::tuple<_Types...>>();
 }
 
@@ -129,14 +136,14 @@ struct _DynamicTupleIdHelper<_Tp, (std::size_t)std::tuple_size<_Tp>{}> {
 };
 
 template <typename _Tp>
-tuple_index dynamic_tupleid ( const _Tp& __tp ) {
-    tuple_index index{std::tuple_size<_Tp>{}};
+auto dynamic_tupleid ( const _Tp& __tp ) -> non_std::tuple_index {
+    non_std::tuple_index index{std::tuple_size<_Tp>{}};
     _DynamicTupleIdHelper<_Tp>::get(index._M_data.get(), __tp);
     return index;
 }
 
 template <typename... _Types>
-tuple_index dynamic_typeid ( _Types&&... __types ) {
+auto dynamic_typeid ( _Types&&... __types ) -> non_std::tuple_index {
     return dynamic_tupleid(std::forward_as_tuple(std::forward<_Types>(__types)...));
 }
 
@@ -216,7 +223,6 @@ struct _TupleId<std::tuple<>> : _TupleIdBase {
 
 template <typename _Tp1,typename _Tp2>
 struct _TupleId<std::pair<_Tp1, _Tp2>> : _TupleId<std::tuple<_Tp1,_Tp2>> {};
-}
 }
 
 #endif // TUPLEID
