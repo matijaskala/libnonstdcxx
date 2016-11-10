@@ -22,12 +22,12 @@
 
 #include <string>
 
-namespace non_std [[gnu::visibility("default")]]
+namespace non_std
 {
 
-std::string demangle ( const char* symbol );
+std::string demangle [[gnu::visibility("default")]] ( const char* symbol );
 
-std::string mangle_symbol (std::string symbol);
+std::string mangle_symbol [[gnu::visibility("default")]] (std::string symbol);
 }
 
 #endif // NON_STD_CXXABI
