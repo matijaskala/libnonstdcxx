@@ -20,13 +20,13 @@
 #ifndef NON_STD_DL
 #define NON_STD_DL
 
-namespace dl [[gnu::visibility("default")]]
+namespace dl
 {
 
-void* open ( char* file );
-bool close ( void* handle );
-void* sym ( void* handle, char* name );
-char* error ();
+void* open [[gnu::visibility("default")]] ( char* file );
+bool close [[gnu::visibility("default")]] ( void* handle );
+void* sym [[gnu::visibility("default")]] ( void* handle, char* name );
+char* error [[gnu::visibility("default")]] ();
 }
 
 #endif // NON_STD_DL
