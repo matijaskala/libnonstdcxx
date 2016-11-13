@@ -39,7 +39,7 @@ directory::directory ( string path ) : m_entries{}, m_path{path}
     }
 
     m_entries.shrink_to_fit();
-    sort ( m_entries.begin(), m_entries.end(), [] (entry& a, entry&  b) { return a.name() < b.name(); } );
+    sort ( m_entries.begin(), m_entries.end(), [] ( const entry& a, const entry&  b ) { return a.name() < b.name(); } );
 
     closedir ( dir );
 }
