@@ -462,4 +462,3 @@ improved_istream& improved_istream::operator>>(std::u32string& __str)
     delete[] dest;
     return *this;
 }
-//void test() { improved_istream f; char c; f.get(c); char32_t c32; char* c8p; std::move(f) >> c >> c32; std::move(f) >> &c32 >> c8p >> &c32; std::move(f) >> &c; }

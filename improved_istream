@@ -80,7 +80,7 @@ public:
     improved_istream& operator>>(wchar_t* __s);
     improved_istream& operator>>(char16_t* __s);
     improved_istream& operator>>(char32_t* __s);
-    improved_istream& operator>>(std::streambuf* __sb) { basic_istream::operator>>(__sb); return *this; }
+    improved_istream& operator>>(std::streambuf* __sb) { static_cast<basic_istream&>(*this) >> __sb; return *this; }
     improved_istream& operator>>(std::wstring& __str);
     improved_istream& operator>>(std::u16string& __str);
     improved_istream& operator>>(std::u32string& __str);
