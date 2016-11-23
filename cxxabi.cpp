@@ -297,10 +297,10 @@ string non_std::mangle_symbol (string symbol)
     }
 }
 #else // __GNUC__
-string non_std::demangle ( const char* symbol ) {
-	return ""s;
+std::string non_std::demangle ( const char* symbol ) {
+	return {};
 }
-string non_std::mangle_symbol (string symbol) {
-	return ""s;
+std::string non_std::mangle_symbol (string symbol) {
+	return {};
 }
 #endif // __GNUC__
