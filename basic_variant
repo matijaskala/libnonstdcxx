@@ -69,7 +69,7 @@ public:
     static std::type_index nulltype() { return current_type(); }
     static constexpr null_t null() { return nullptr; }
 
-    static void create ( null_t, std::type_index& type, void*& data ) { /* leave null */ }
+    static void create ( null_t, std::type_index& type, void*& data ) { (void)type; (void)data; /* leave null */ }
 
     template< class Visitor >
     static void apply_visitor ( Visitor& visitor, std::type_index type, void* data ) {
@@ -94,7 +94,7 @@ class basic_variant {
     struct visitors {
         template< typename _Type >
         struct get {
-            typename std::aligned_storage<sizeof(_Type),alignof(_Type)>::type actual_value;
+            typename std::aligned_storage<sizeof(_Type),alignof(_Type)>::type actual_value{};
             _Type& value = reinterpret_cast<_Type&>(actual_value);
             ~get ( ) { value.~_Type(); }
             template< typename _Arg >
@@ -105,11 +105,11 @@ class basic_variant {
 
         template<typename _Type>
         struct get<_Type&&> {
-            typename std::aligned_storage<sizeof(_Type),alignof(_Type)>::type actual_value;
+            typename std::aligned_storage<sizeof(_Type),alignof(_Type)>::type actual_value{};
             _Type& value = reinterpret_cast<_Type&>(actual_value);
             ~get ( ) { value.~_Type(); }
             template< typename _Arg >
-            void operator() ( _Arg* __arg ) { new(&value) _Type(runtime_cast<_Type> ( *__arg )); }
+            void operator() ( _Arg* __arg ) { new(&value) _Type(runtime_cast<_Type> (std::move ( *__arg ))); }
             void operator() ( _Type* data ) { new(&value) _Type(std::move ( *data )); }
             void operator() ( null_t ) { throw bad_get(); }
         };
