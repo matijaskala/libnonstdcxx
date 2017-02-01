@@ -46,7 +46,7 @@ bool dl::close ( void* handle ) {
 #endif
 }
 
-void* dl::sym ( void* handle, char* name ) {
+void* dl::sym ( void* handle, const char* name ) {
 #ifdef _WIN32
     FARPROC sym = GetProcAddress ( static_cast<HMODULE> ( handle ), name );
     return reinterpret_cast<void*> ( sym );

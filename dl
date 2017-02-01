@@ -25,7 +25,7 @@ namespace dl
 
 void* open [[gnu::visibility("default")]] ( char* file );
 bool close [[gnu::visibility("default")]] ( void* handle );
-void* sym [[gnu::visibility("default")]] ( void* handle, char* name );
+void* sym [[gnu::visibility("default")]] ( void* handle, const char* name );
 char* error [[gnu::visibility("default")]] ();
 }
 
