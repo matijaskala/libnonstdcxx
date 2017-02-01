@@ -26,7 +26,7 @@
 #include <dlfcn.h>
 #endif
 
-void* dl::open ( char* file ) {
+void* dl::open ( const char* file ) {
 #ifdef _WIN32
     std::string mspath;
     for ( char* c = file; *c; c++ )

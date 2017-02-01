@@ -23,7 +23,7 @@
 namespace dl
 {
 
-void* open [[gnu::visibility("default")]] ( char* file );
+void* open [[gnu::visibility("default")]] ( const char* file );
 bool close [[gnu::visibility("default")]] ( void* handle );
 void* sym [[gnu::visibility("default")]] ( void* handle, const char* name );
 char* error [[gnu::visibility("default")]] ();
