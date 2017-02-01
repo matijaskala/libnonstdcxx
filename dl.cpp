@@ -34,6 +34,7 @@ void* dl::open ( char* file ) {
     return LoadLibraryExA ( (LPSTR) mspath.c_str(), NULL, 
                            LOAD_WITH_ALTERED_SEARCH_PATH );
 #else
+    dlerror();
     return dlopen ( file, RTLD_NOW | RTLD_LOCAL );
 #endif
 }
@@ -42,6 +43,7 @@ bool dl::close ( void* handle ) {
 #ifdef _WIN32
     return FreeLibrary ( static_cast<HMODULE> ( handle ) );
 #else
+    dlerror();
     return dlclose ( handle ) == 0;
 #endif
 }
