@@ -38,7 +38,7 @@ namespace non_std
 {
 
 struct tuple_index {
-    bool operator== ( const tuple_index& __rhs ) {
+    bool operator== ( const tuple_index& __rhs ) const {
         if ( _M_count != __rhs._M_count )
             return false;
         for ( std::size_t i = 0; i < _M_count; i++ )
@@ -46,7 +46,7 @@ struct tuple_index {
                 return false;
         return true;
     }
-    bool operator!= ( const tuple_index& __rhs ) {
+    bool operator!= ( const tuple_index& __rhs ) const {
         if ( _M_count != __rhs._M_count )
             return true;
         for ( std::size_t i = 0; i < _M_count; i++ )
