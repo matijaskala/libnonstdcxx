@@ -54,6 +54,12 @@ struct tuple_index {
                 return true;
         return false;
     }
+    std::size_t hash_code () const noexcept {
+        std::size_t r = 0;
+        for ( std::size_t i = 0; i < _M_count; i++ )
+            r += _M_data.get()[i]->hash_code();
+        return r;
+    }
 #if !defined __GNUC__ && !defined __clang__
 #define demangle
 #endif
@@ -84,6 +90,19 @@ private:
     , _M_count{count} {}
     std::shared_ptr<const std::type_info*> _M_data;
     std::size_t _M_count;
+};
+}
+
+namespace std {
+
+template <>
+struct hash<non_std::tuple_index>
+{
+    using result_type = size_t;
+    using argument_type = non_std::tuple_index;
+    result_type operator()(const argument_type& arg) const noexcept {
+        return arg.hash_code();
+    }
 };
 }
 
