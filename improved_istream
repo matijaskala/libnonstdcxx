@@ -41,9 +41,6 @@ public:
 
     int_type get() { return basic_istream::get(); }
     improved_istream& get(char& __c) { basic_istream::get(__c); return *this; }
-    improved_istream& get(wchar_t& __c);
-    improved_istream& get(char16_t& __c);
-    improved_istream& get(char32_t& __c);
 
     improved_istream& get(std::streambuf& __sb, char __delim = '\n') { basic_istream::get(__sb, __delim); return *this; }
     improved_istream& get(char* __s, std::streamsize __n, char __delim = '\n') { basic_istream::get(__s, __n, __delim); return *this; }
@@ -54,19 +51,8 @@ public:
     improved_istream& ignore() { basic_istream::ignore(); return *this; }
 
     improved_istream& read(char* __s, std::streamsize __n) { basic_istream::read(__s, __n); return *this; }
-    improved_istream& read(wchar_t* __s, std::streamsize __n);
-    improved_istream& read(char16_t* __s, std::streamsize __n);
-    improved_istream& read(char32_t* __s, std::streamsize __n);
-
-    std::streamsize readsome(char* __s, std::streamsize __n) { return basic_istream::readsome(__s, __n); }
-    std::streamsize readsome(wchar_t* __s, std::streamsize __n);
-    std::streamsize readsome(char16_t* __s, std::streamsize __n);
-    std::streamsize readsome(char32_t* __s, std::streamsize __n);
 
     improved_istream& putback(char __c) { basic_istream::putback(__c); return *this; }
-    improved_istream& putback(wchar_t __c);
-    improved_istream& putback(char16_t __c);
-    improved_istream& putback(char32_t __c);
 
     improved_istream& unget() { basic_istream::unget(); return *this; }
     improved_istream& seekg(pos_type __pos) { basic_istream::seekg(__pos); return *this; }
