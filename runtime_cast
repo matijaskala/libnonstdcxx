@@ -36,10 +36,10 @@ public:
 };
 }
 
-template< typename _Tp > using __is_pointer = std::integral_constant<bool,std::is_pointer<_Tp>::value||std::is_member_pointer<_Tp>::value>;
-template< typename _Tp > using __is_non_void_pointer = std::integral_constant<bool,__is_pointer<_Tp>::value&&!std::is_same<_Tp,void*>::value>;
+template< typename _Tp > using _IsPointer = std::integral_constant<bool,std::is_pointer<_Tp>::value||std::is_member_pointer<_Tp>::value>;
+template< typename _Tp > using _IsNonVoidPointer = std::integral_constant<bool,_IsPointer<_Tp>::value&&!std::is_same<_Tp,void*>::value>;
 
-template< typename _Tp > using __for_pointer = typename std::enable_if<__is_pointer<_Tp>::value,_Tp>::type;
+template< typename _Tp > using __for_pointer = typename std::enable_if<_IsPointer<_Tp>::value,_Tp>::type;
 template< typename _Tp > using __for_arithmetic = typename std::enable_if<std::is_arithmetic<_Tp>::value,_Tp>::type;
 template< typename _Tp > using __for_non_scalar = typename std::enable_if<!std::is_scalar<_Tp>::value,_Tp>::type;
 
@@ -68,10 +68,10 @@ template< typename _Res > inline __for_pointer< _Res > runtime_cast ( std::strin
 template< typename _Res > inline __for_pointer< _Res > runtime_cast ( char s[] ) { return runtime_cast<_Res> ( lexical_cast<void*> ( s ) ); }
 template< typename _Res, typename _Arg > inline __for_non_scalar< _Res > runtime_cast ( _Arg* s ) { throw non_std::bad_runtime_cast{static_typeid<_Res>().name(), static_typeid(s).name()}; }
 
-template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value
+template< typename _Res, typename _Arg > inline typename std::enable_if<!_IsPointer<_Arg>::value
  && !std::is_same<_Res,_Arg>::value && std::is_copy_constructible<_Arg>::value,_Res>::type runtime_cast ( _Arg s )
 { throw non_std::bad_runtime_cast{static_typeid<_Res>().name(), static_typeid(s).name()}; }
-template< typename _Res, typename _Arg > inline typename std::enable_if<!__is_pointer<_Arg>::value
+template< typename _Res, typename _Arg > inline typename std::enable_if<!_IsPointer<_Arg>::value
  && !std::is_same<_Res,_Arg>::value && !std::is_copy_constructible<_Arg>::value,_Res>::type runtime_cast ( const _Arg& s )
 { throw non_std::bad_runtime_cast{static_typeid<_Res>().name(), static_typeid(s).name()}; }
 template< typename _Res > inline _Res runtime_cast ( const char* s ) { return runtime_cast<_Res> ( static_cast<std::string> ( s ) ); }
@@ -91,8 +91,8 @@ template<> inline std::string runtime_cast<std::string> ( double s ) { return le
 template<> inline std::string runtime_cast<std::string> ( long double s ) { return lexical_cast<std::string> ( s ); }
 template<> inline std::string runtime_cast<std::string> ( void* s ) { return lexical_cast<std::string> ( s ); }
 
-template< typename _Type > inline typename std::enable_if<std::is_copy_constructible<_Type>::value,_Type>::type runtime_cast ( _Type s ) { return s; }
-template< typename _Type > inline typename std::enable_if<!std::is_copy_constructible<_Type>::value,_Type>::type runtime_cast ( const _Type& s )
+template< typename _Type > inline typename std::enable_if<std::is_move_constructible<_Type>::value,_Type>::type runtime_cast ( _Type s ) { return s; }
+template< typename _Type > inline typename std::enable_if<!std::is_move_constructible<_Type>::value,_Type>::type runtime_cast ( const _Type& s )
 { throw non_std::bad_runtime_cast{static_typeid<_Type>().name(), static_typeid(s).name()}; }
 
 #endif // NON_STD_RUNTIME_CAST
