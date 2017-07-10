@@ -29,7 +29,7 @@
 void* dl::open ( const char* file ) {
 #ifdef _WIN32
     std::string mspath;
-    for ( char* c = file; *c; c++ )
+    for ( const char* c = file; *c; c++ )
     	mspath += ( *c == '/' ) ? '\\' : *c;
     return LoadLibraryExA ( (LPSTR) mspath.c_str(), NULL, 
                            LOAD_WITH_ALTERED_SEARCH_PATH );
