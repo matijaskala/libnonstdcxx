@@ -29,6 +29,7 @@ set(LIBNONSTDCXX_HEADERS
     nullref
     signal
     traits
+    type_array
     xterm
 )
 

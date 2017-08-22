@@ -1,0 +1,159 @@
+/*
+ * Array of types
+ * Copyright (C) 2017  Matija Skala <mskala@gmx.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef NON_STD_TYPE_ARRAY
+#define NON_STD_TYPE_ARRAY
+
+#include <type_traits>
+
+namespace non_std {
+
+template<typename...>
+struct type_array;
+
+namespace __type_array_helpers {
+    template<int, typename...>
+    struct _At {};
+    template<int, int, typename...>
+    struct _Erase {};
+    template<int, int, typename...>
+    struct _Range {};
+
+    template<int N, typename F, typename... G>
+    struct _At<N,F,G...> : _At<N-1,G...> {};
+    template<typename F, typename... G>
+    struct _At<0,F,G...> { using type = F; };
+    template<typename...>
+    struct _Count { static constexpr int value = 0; };
+    template<typename F, typename... G>
+    struct _Count<F,G...> { static constexpr int value = _Count<G...>::value + 1; };
+    template<int P, int N, typename F, typename... G>
+    struct _Erase<P,N,F,G...> { using type = typename _Erase<P-1,N,G...>::type::template push_front<F>; };
+    template<int N, typename F, typename... G>
+    struct _Erase<0,N,F,G...> : _Erase<0,N-1,G...> {};
+    template<typename F, typename... G>
+    struct _Erase<0,0,F,G...> { using type = type_array<F,G...>; };
+    template<>
+    struct _Erase<0,0> { using type = type_array<>; };
+    template<typename F, typename... G>
+    struct _Erase<0,-1,F,G...> : _Erase<0,0> {};
+    template<>
+    struct _Erase<0,-1> : _Erase<0,0> {};
+    template<int V>
+    struct _Find0 { static constexpr int value = V + 1; };
+    template<>
+    struct _Find0<-1> { static constexpr int value = -1; };
+    template<typename F, typename... G>
+    struct _Find {};
+    template<typename F, typename G, typename... H>
+    struct _Find<F,G,H...> : _Find0<_Find<F,H...>::value> {};
+    template<typename F, typename... G>
+    struct _Find<F,F,G...> { static constexpr int value = 0; };
+    template<typename F>
+    struct _Find<F> : _Find0<-1> {};
+    template<int P, int N, typename... G>
+    struct _Insert { using type = typename _Range<N,P,G...>::type::template append<G...>::template erase<P+N,P>; };
+    template<int P, int N, typename F, typename... G>
+    struct _Range<P,N,F,G...> : _Range<P-1,N,G...> {};
+    template<int N, typename F, typename... G>
+    struct _Range<0,N,F,G...> : _Erase<N,-1,F,G...> {};
+    template<typename F, typename... G>
+    struct _Range<0,-1,F,G...> { using type = type_array<F,G...>; };
+    template<>
+    struct _Range<0,0> { using type = type_array<>; };
+    template<>
+    struct _Range<0,-1> : _Range<0,0> {};
+    template<typename... G>
+    struct _Range<-1,-1,G...> : _Range<0,0> {};
+    template<bool, typename T>
+    struct _RealShift { using type = typename T::pop_back::template push_front<typename T::last>; };
+    template<typename T>
+    struct _RealShift<false,T> { using type = typename T::pop_front::template push_back<typename T::first>; };
+    template<typename...>
+    struct _Reverse { using type = type_array<>; };
+    template<typename F, typename... G>
+    struct _Reverse<F,G...> { using type = typename _Reverse<G...>::type::template push_back<F>; };
+    template<int S, typename... G>
+    struct _Shift { using type = typename _RealShift<(S > 0),type_array<G...>>::type::template shift<S - (S > 0 ? 1 : -1)>; };
+    template<typename... G>
+    struct _Shift<0,G...> { using type = type_array<G...>; };
+    template<int S>
+    struct _Shift<S> { using type = type_array<>; };
+    template<>
+    struct _Shift<0> { using type = type_array<>; };
+}
+
+template<typename... A>
+struct __type_array_base {
+    template<template<typename...> class T>
+    using pass = T<A...>;
+    template<typename R>
+    using func = R(A...);
+    template<typename... T>
+    using append = type_array<A...,T...>;
+    template<typename T>
+    using push_front = type_array<T,A...>;
+    template<typename T>
+    using push_back = append<T>;
+    template<int N>
+    using at = typename __type_array_helpers::_At<N,A...>::type;
+    template<typename T>
+    using concat = typename T::template pass<append>;
+    static constexpr int count = __type_array_helpers::_Count<A...>::value;
+    template<int P = 0, int N = -1>
+    using erase = typename __type_array_helpers::_Erase<P,N,A...>::type;
+    template<typename F, int P = 0>
+    static constexpr int find = erase<0,P>::template push_front<F>::template pass<__type_array_helpers::_Find>::value;
+    template<typename F, int P = count>
+    static constexpr int rfind = erase<P>::reverse::template push_front<F>::template pass<__type_array_helpers::_Find>::value;
+    template<int P, typename... T>
+    using insert = typename __type_array_helpers::_Insert<P,type_array<T...>::count,T...,A...>::type;
+    template<int P = -1, int N = -1>
+    using range = typename __type_array_helpers::_Range<P,N,A...>::type;
+    template<int S>
+    using shift = typename __type_array_helpers::_Shift<S,A...>::type;
+    template<int P>
+    using remove = erase<P,1>;
+    using reverse = typename __type_array_helpers::_Reverse<A...>::type;
+    struct front { using type = at<0>; };
+    struct back { using type = at<count-1>; };
+};
+
+template<typename... A>
+struct type_array : __type_array_base<A...> {
+    using first = typename type_array::front::type;
+    using last = typename type_array::back::type;
+    using pop_front = typename type_array::template remove<0>;
+    using pop_back = typename type_array::template remove<type_array::count-1>;
+};
+
+template<>
+struct type_array<> : __type_array_base<> {};
+
+template<typename R, typename... A>
+constexpr type_array<A...> type_array_from_func(R(A...));
+
+template<typename R, typename... A>
+constexpr type_array<A...> type_array_from_func(R(*)(A...));
+
+template<typename R, typename O, typename... A>
+constexpr type_array<A...> type_array_from_func(R(O::*)(A...));
+}
+
+#endif // NON_STD_TYPE_ARRAY
