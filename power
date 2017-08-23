@@ -1,0 +1,57 @@
+/*
+ * Calculate x ** n
+ * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this library.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef NON_STD_POWER
+#define NON_STD_POWER
+
+#include <functional>
+
+namespace non_std {
+
+template <typename _Tp>
+constexpr auto inverse_element(std::plus<_Tp>) -> std::negate<_Tp> { return {}; }
+
+template <typename _Tp>
+constexpr _Tp identity_element(std::plus<_Tp>) { return _Tp(0); }
+
+template <typename _Tp>
+constexpr auto inverse_element(std::multiplies<_Tp>) -> _Tp(*)(const _Tp&) { return [] (const _Tp& __x) { return 1/__x; }; }
+
+template <typename _Tp>
+constexpr _Tp identity_element(std::multiplies<_Tp>) { return _Tp(1); }
+
+template <typename _Tp, typename _Int, typename _Op = std::multiplies<_Tp>>
+constexpr _Tp power(_Tp __x, _Int __n, _Op __op = {}) {
+    switch (__n) {
+        case 0:
+            return identity_element(__op);
+        case 1:
+            return __x;
+        case 2:
+            return __op(__x, __x);
+    }
+    if (__n < 0)
+        return power(inverse_element(__op)(__x), -__n, __op);
+    if (__n % 2)
+        return __op(power(power(__x, __n/2, __op), 2, __op), __x);
+    return power(power(__x, __n/2, __op), 2, __op);
+}
+}
+
+#endif // NON_STD_POWER

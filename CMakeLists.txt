@@ -61,6 +61,7 @@ set(LIBNONSTDCXX_HEADERS ${LIBNONSTDCXX_HEADERS}
     file
     funcid
     improved_istream
+    power
     runtime_cast
     stdio_sync_filebuf
     tupleid
