@@ -21,6 +21,7 @@
 
 #include <dirent.h>
 #include <algorithm>
+#include <cerrno>
 
 using namespace std;
 using namespace non_std;
