@@ -48,7 +48,7 @@ struct _AllEq<> {
 };
 
 template <typename... _Args>
-bool all_eq ( _Args... __args ) { return all_eq<_Args...> ( __args... ); }
+bool all_eq ( _Args... __args ) { return _AllEq<_Args...>() ( std::forward<_Args>(__args)... ); }
 
 template <template <typename...> class, typename...>
 struct _ITupleHelper;
