@@ -407,11 +407,12 @@ rvalue_ituple<std::tuple, _Types&&...> forward_as_ituple ( _Types&&... __args ) 
 
 template <template <typename...> class _Tp, typename... _Types>
 struct ctuple : _Tp<_Types...> {
-    using _Tp<_Types...>::_Tp;
+    template <typename... _Args>
+    ctuple ( _Args&&... __args ) : _Tp<_Types...>(std::forward<_Args>(__args)...) {}
     template <typename _Res>
     struct __construct {
         template <typename... _Args>
-        _Res operator() ( _Args&&... __arg ) { return _Res{std::forward<_Args>(__arg)...}; }
+        _Res operator() ( _Args&&... __args ) { return _Res{std::forward<_Args>(__args)...}; }
     };
     template <typename _Res>
     operator _Res() && { return _PassHelperWrapper<_Types...>::pass(__construct<_Res>{}, std::move(*this)); }
