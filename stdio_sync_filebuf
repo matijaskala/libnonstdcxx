@@ -100,14 +100,14 @@ namespace non_std
       syncputc(int_type __c);
 
       virtual int_type
-      underflow()
+      underflow() override
       {
         int_type __c = this->syncgetc();
         return this->syncungetc(__c);
       }
 
       virtual int_type
-      uflow()
+      uflow() override
       {
         // Store the gotten character in case we need to unget it.
         _M_unget_buf = this->syncgetc();
@@ -115,7 +115,7 @@ namespace non_std
       }
 
       virtual int_type
-      pbackfail(int_type __c = traits_type::eof())
+      pbackfail(int_type __c = traits_type::eof()) override
       {
         int_type __ret;
         const int_type __eof = traits_type::eof();
@@ -137,7 +137,7 @@ namespace non_std
       }
 
       virtual std::streamsize
-      xsgetn(char_type* __s, std::streamsize __n)
+      xsgetn(char_type* __s, std::streamsize __n) override
       {
         std::streamsize __ret = 0;
         const int_type __eof = traits_type::eof();
@@ -158,7 +158,7 @@ namespace non_std
       }
 
       virtual int_type
-      overflow(int_type __c = traits_type::eof())
+      overflow(int_type __c = traits_type::eof()) override
       {
         int_type __ret;
         if (traits_type::eq_int_type(__c, traits_type::eof()))
@@ -174,7 +174,7 @@ namespace non_std
       }
 
       virtual std::streamsize
-      xsputn(const char_type* __s, std::streamsize __n)
+      xsputn(const char_type* __s, std::streamsize __n) override
       {
         std::streamsize __ret = 0;
         const int_type __eof = traits_type::eof();
@@ -188,12 +188,12 @@ namespace non_std
       }
 
       virtual int
-      sync()
+      sync() override
       { return std::fflush(_M_file); }
 
       virtual std::streampos
       seekoff(std::streamoff __off, std::ios_base::seekdir __dir,
-              std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
+              std::ios_base::openmode = std::ios_base::in | std::ios_base::out) override
       {
         std::streampos __ret(std::streamoff(-1));
         int __whence;
@@ -211,7 +211,7 @@ namespace non_std
       virtual std::streampos
       seekpos(std::streampos __pos,
               std::ios_base::openmode __mode =
-              std::ios_base::in | std::ios_base::out)
+              std::ios_base::in | std::ios_base::out) override
       { return seekoff(std::streamoff(__pos), std::ios_base::beg, __mode); }
     };
 

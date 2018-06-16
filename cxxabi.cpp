@@ -32,7 +32,7 @@ class bad_symbol : public exception {
     string _M_msg;
 public:
     bad_symbol ( const string& symbol, size_t pos );
-    virtual const char* what() const noexcept {
+    virtual const char* what() const noexcept override {
         return _M_msg.c_str();
     }
 };

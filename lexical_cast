@@ -30,7 +30,7 @@ namespace non_std
 
 class bad_lexical_cast : public std::bad_cast {
 public:
-    virtual const char* what() const noexcept {
+    virtual const char* what() const noexcept override {
         return "non_std::bad_lexical_cast";
     }
 };

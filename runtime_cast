@@ -30,7 +30,7 @@ class bad_runtime_cast : public std::bad_cast {
     std::string _M_msg;
 public:
     explicit bad_runtime_cast(std::string _Res, std::string _Arg) : _M_msg("runtime_cast<" + _Res + ">(" + _Arg + ")") {}
-    virtual const char* what() const noexcept {
+    virtual const char* what() const noexcept override {
         return _M_msg.c_str();
     }
 };
