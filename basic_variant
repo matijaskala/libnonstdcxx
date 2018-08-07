@@ -1,6 +1,6 @@
 /*
  * Stack-based union container
- * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2014-2018  Matija Skala <mskala@gmx.com>
  *
  * This library is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 #define NON_STD_BASIC_VARIANT
 
 #include <stdexcept>
-#include <typeindex>
 #include "runtime_cast"
 
 namespace non_std
@@ -29,7 +28,7 @@ namespace non_std
 
 class bad_get : public std::exception {
 public:
-    virtual const char* what() const noexcept {
+    virtual const char* what() const noexcept override {
         return "non_std::bad_get";
     }
 };
@@ -41,18 +40,18 @@ template< typename _FirstType, typename... _OtherTypes >
 class variant_manager<_FirstType,_OtherTypes...> : public variant_manager<_OtherTypes...> {
     using next = variant_manager<_OtherTypes...>;
 
-    static std::type_index current_type() { return typeid(_FirstType); }
+    static decltype(next::nulltype()) current_type() { return sizeof...(_OtherTypes); }
 
 public:
     using next::create;
 
-    static void create ( _FirstType __value, std::type_index& type, void*& data ) {
-        data = new _FirstType ( std::move ( __value ) );
+    static void create ( _FirstType value, decltype(next::nulltype())& type, void* data ) {
+        ::new(data) _FirstType ( std::move ( value ) );
         type = current_type();
     }
 
     template< class Visitor >
-    static void apply_visitor ( Visitor& visitor, std::type_index type, void* data ) {
+    static void apply_visitor ( Visitor& visitor, decltype(next::nulltype()) type, void* data ) {
         if ( type == current_type() )
             visitor ( static_cast<_FirstType*> ( data ) );
         else
@@ -62,33 +61,30 @@ public:
 
 template<>
 class variant_manager<> {
-    static std::type_index current_type() { return typeid(void); }
+    static int current_type() { return -1; }
 
 public:
-    using null_t = std::nullptr_t;
-    static std::type_index nulltype() { return current_type(); }
-    static constexpr null_t null() { return nullptr; }
+    static decltype(current_type()) nulltype() { return current_type(); }
 
-    static void create ( null_t, std::type_index& type, void*& data ) { (void)type; (void)data; /* leave null */ }
+    static void create ( std::nullptr_t, decltype(nulltype())& type, void* data ) {
+        (void)type; (void)data; /* leave null */
+    }
 
     template< class Visitor >
-    static void apply_visitor ( Visitor& visitor, std::type_index type, void* data ) {
-        if ( type == current_type() ) {
-            if ( data )
-                throw std::runtime_error ( "data != null" );
-            visitor ( null() );
-        }
+    static void apply_visitor ( Visitor& visitor, decltype(nulltype()) type, void* data ) {
+        (void)data;
+        if ( type == current_type() )
+            visitor ( nullptr );
         else
-            throw std::runtime_error ( std::string{} + "unhandled data type '" + type.name() + "'" );
+            throw std::logic_error ( "basic_variant::apply_visitor invalid data type" );
     }
 };
 
 template< typename... _Types >
 class basic_variant {
     using manager = variant_manager<_Types...>;
-    using null_t = typename manager::null_t;
 
-    void* data{manager::null()};
+    typename std::aligned_union<0, _Types...>::type data;
     decltype(manager::nulltype()) type{manager::nulltype()};
 
     struct visitors {
@@ -98,9 +94,9 @@ class basic_variant {
             _Type& value = reinterpret_cast<_Type&>(actual_value);
             ~get ( ) { value.~_Type(); }
             template< typename _Arg >
-            void operator() ( _Arg* __arg ) { new(&value) _Type(runtime_cast<_Type> ( *__arg )); }
-            void operator() ( _Type* data ) { new(&value) _Type(*data); }
-            void operator() ( null_t ) { throw bad_get(); }
+            void operator() ( _Arg* __arg ) { ::new(&value) _Type(runtime_cast<_Type> ( *__arg )); }
+            void operator() ( _Type* data ) { ::new(&value) _Type(*data); }
+            void operator() ( std::nullptr_t ) { throw bad_get(); }
         };
 
         template<typename _Type>
@@ -109,22 +105,29 @@ class basic_variant {
             _Type& value = reinterpret_cast<_Type&>(actual_value);
             ~get ( ) { value.~_Type(); }
             template< typename _Arg >
-            void operator() ( _Arg* __arg ) { new(&value) _Type(runtime_cast<_Type> (std::move ( *__arg ))); }
-            void operator() ( _Type* data ) { new(&value) _Type(std::move ( *data )); }
-            void operator() ( null_t ) { throw bad_get(); }
+            void operator() ( _Arg* __arg ) { ::new(&value) _Type(runtime_cast<_Type> (std::move ( *__arg ))); }
+            void operator() ( _Type* data ) { ::new(&value) _Type(std::move ( *data )); }
+            void operator() ( std::nullptr_t ) { throw bad_get(); }
         };
 
         struct copy {
             basic_variant* target;
             template< typename _Type >
             void operator() ( _Type* data ) { target->set ( *data ); }
-            void operator() ( null_t ) { target->reset(); }
+            void operator() ( std::nullptr_t ) { target->reset(); }
+        };
+
+        struct move {
+            basic_variant* target;
+            template< typename _Type >
+            void operator() ( _Type* data ) { target->set ( std::move ( *data ) ); }
+            void operator() ( std::nullptr_t ) { target->reset(); }
         };
 
         struct destroy {
             template< typename _Type >
-            void operator() ( _Type* data ) { delete data; }
-            void operator() ( null_t ) {}
+            void operator() ( _Type* data ) { data->~_Type(); }
+            void operator() ( std::nullptr_t ) {}
         };
     };
 
@@ -137,10 +140,8 @@ public:
     }
 
     basic_variant ( basic_variant&& other ) {
-        type = other.type;
-        data = other.data;
-        other.type = manager::nulltype();
-        other.data = manager::null();
+        typename visitors::move visitor{this};
+        other.apply_visitor ( visitor );
     }
 
     template< typename _Type >
@@ -157,8 +158,8 @@ public:
     }
 
     basic_variant& operator= ( basic_variant&& other ) {
-        std::swap ( type, other.type );
-        std::swap ( data, other.data );
+        typename visitors::move visitor{this};
+        other.apply_visitor ( visitor );
         return *this;
     }
 
@@ -168,23 +169,22 @@ public:
         return *this;
     }
 
-    bool is_null () const { return data == manager::null(); }
+    bool is_null () const { return type == manager::nulltype(); }
 
     template< typename _Visitor >
     void apply_visitor ( _Visitor& visitor ) {
-        manager::apply_visitor ( visitor, type, data );
+        manager::apply_visitor ( visitor, type, std::addressof ( data ) );
     }
 
     template< typename _Visitor >
     void apply_visitor ( _Visitor& visitor ) const {
-        manager::apply_visitor ( visitor, type, data );
+        manager::apply_visitor ( visitor, type, std::addressof ( data ) );
     }
 
     void reset () {
         typename visitors::destroy visitor;
-        manager::apply_visitor ( visitor, type, data );
+        apply_visitor ( visitor );
         type = manager::nulltype();
-        data = manager::null();
     }
 
     template< typename _Type >
@@ -198,7 +198,7 @@ private:
     template< typename _Type >
     void set ( _Type value ) {
         reset();
-        manager::create ( std::move ( value ), type, data );
+        manager::create ( std::move ( value ), type, std::addressof ( data ) );
     }
 
 };
