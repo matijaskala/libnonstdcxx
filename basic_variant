@@ -57,6 +57,14 @@ public:
         else
             next::apply_visitor ( visitor, type, data );
     }
+
+    template< class Visitor >
+    static void apply_visitor ( Visitor& visitor, decltype(next::nulltype()) type, const void* data ) {
+        if ( type == current_type() )
+            visitor ( static_cast<const _FirstType*> ( data ) );
+        else
+            next::apply_visitor ( visitor, type, data );
+    }
 };
 
 template<>
@@ -71,7 +79,7 @@ public:
     }
 
     template< class Visitor >
-    static void apply_visitor ( Visitor& visitor, decltype(nulltype()) type, void* data ) {
+    static void apply_visitor ( Visitor& visitor, decltype(nulltype()) type, const void* data ) {
         (void)data;
         if ( type == current_type() )
             visitor ( nullptr );
@@ -185,6 +193,13 @@ public:
         typename visitors::destroy visitor;
         apply_visitor ( visitor );
         type = manager::nulltype();
+    }
+
+    template< typename _Type >
+    typename std::remove_reference<_Type>::type as () {
+        typename visitors::template get<_Type> visitor;
+        apply_visitor ( visitor );
+        return std::move ( visitor.value );
     }
 
     template< typename _Type >
