@@ -16,8 +16,8 @@
  *
  */
 
-#include <unicode/utf16.h>
 #include "char32.h"
+#include "unicode/utf16.h"
 
 uint_least16_t getc16 ( FILE* stream ) {
     static uint_least16_t trail = 0;

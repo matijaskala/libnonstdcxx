@@ -16,7 +16,7 @@
  *
  */
 
-#include <unicode/utf16.h>
+#include "unicode/utf16.h"
 
 void _c32toc8 ( uint_least32_t __c, char* c8 ) {
     if (!c8)

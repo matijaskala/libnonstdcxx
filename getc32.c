@@ -16,8 +16,8 @@
  *
  */
 
-#include <unicode/utf8.h>
 #include "char32.h"
+#include "unicode/utf8.h"
 
 uint8_t _c8len ( char __c );
 uint_least32_t getc32 ( FILE* stream ) {

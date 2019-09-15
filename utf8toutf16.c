@@ -18,9 +18,9 @@
 
 #include <malloc.h>
 #include <stdbool.h>
-#include <unicode/utf8.h>
-#include <unicode/utf16.h>
 #include "char32.h"
+#include "unicode/utf8.h"
+#include "unicode/utf16.h"
 
 uint8_t _c8len ( char __c );
 uint_least16_t* utf8_to_utf16 ( const char* __src, uint_least16_t* __dst, size_t __len ) {
