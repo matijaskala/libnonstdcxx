@@ -1,0 +1,498 @@
+/*
+ * High-performance replacement for std::vector
+ * Copyright (C) 2018-2019  Matija Skala <mskala@gmx.com>
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef TWOWAY_VECTOR_H
+#define TWOWAY_VECTOR_H
+
+#include <algorithm>
+#include <memory>
+
+template <typename T, typename Alloc = std::allocator<T>>
+class twoway_vector
+{
+    using alloc_traits = std::allocator_traits<Alloc>;
+    using allocator_type = typename alloc_traits::template rebind_alloc<T>;
+    using size_type = typename alloc_traits::size_type;
+    using value_type = typename alloc_traits::value_type;
+    using iterator = typename alloc_traits::pointer;
+    using const_iterator = typename alloc_traits::const_pointer;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using reference = T&;
+    using const_reference = const T&;
+
+public:
+    twoway_vector(const allocator_type& a = allocator_type{}) : allocator{a} {}
+
+    twoway_vector(size_type n, const allocator_type& a = allocator_type{}) : allocator{a} {
+        resize(n);
+    }
+
+    twoway_vector(size_type n, const value_type& x, const allocator_type& a = allocator_type{})
+        : allocator{a} {
+        assign(n, x);
+    }
+
+    twoway_vector(std::initializer_list<value_type> l, const allocator_type& a = allocator_type{})
+        : allocator{a} {
+        append(l);
+    }
+
+    twoway_vector(const twoway_vector& other) : allocator{other.allocator} {
+        append(other);
+    }
+
+    twoway_vector(twoway_vector&& other) : allocator{other.allocator} {
+        swap(other);
+    }
+
+    twoway_vector(const twoway_vector& other, const allocator_type& a) : allocator{a} {
+        append(other);
+    }
+
+    twoway_vector(twoway_vector&& other, const allocator_type& a) : allocator{a} {
+        if (allocator == other.allocator)
+            swap(other);
+        else
+            assign(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
+    }
+
+    ~twoway_vector() {
+        if (m_ptr)
+            alloc_traits::deallocate(allocator, m_ptr, m_capacity);
+    }
+
+    twoway_vector& operator=(const twoway_vector& other) {
+        if (this == &other)
+            return *this;
+        assign(other.begin(), other.end());
+        return *this;
+    }
+
+    twoway_vector& operator=(twoway_vector&& other) {
+        swap(other);
+        return *this;
+    }
+
+    void swap(twoway_vector& other) {
+        std::swap(m_begin, other.m_begin);
+        std::swap(m_end, other.m_end);
+        std::swap(m_capacity, other.m_capacity);
+        std::swap(m_ptr, other.m_ptr);
+    }
+
+    void assign(std::initializer_list<value_type> list) {
+        if (list.size() > size()) {
+            auto l_end = std::next(std::begin(list), size());
+            std::move(std::begin(list), l_end, begin());
+            insert(end(), std::make_move_iterator(l_end), std::make_move_iterator(std::end(list)));
+        }
+        else {
+            erase(std::next(begin(), list.size()), end());
+            std::move(std::begin(list), std::end(list), begin());
+        }
+    }
+
+    void assign(size_type n, const value_type& x) {
+        if (n > size()) {
+            std::fill(begin(), end(), x);
+            insert(end(), n - size(), x);
+        }
+        else {
+            erase(std::next(begin(), n), end());
+            std::fill(begin(), end(), x);
+        }
+    }
+
+    template<typename InputIterator>
+    void assign(InputIterator first, InputIterator last) {
+        const size_type l = std::distance(first, last);
+        if (l > size()) {
+            const auto stop = std::next(first, size());
+            std::copy(first, stop, begin());
+            insert(end(), stop, last);
+        }
+        else {
+            erase(std::next(begin(), l), end());
+            std::copy(first, last, begin());
+        }
+    }
+
+    template <typename List>
+    bool operator==(const List& list) const {
+        return std::equal(cbegin(), cend(), std::cbegin(list), std::cend(list));
+    }
+
+    template <typename List>
+    bool operator!=(const List& list) const {
+        return !(*this == list);
+    }
+
+    reference operator[](size_type n) {
+        return *std::next(begin(), n);
+    }
+
+    const_reference operator[](size_type n) const {
+        return *std::next(begin(), n);
+    }
+
+    void reserve(size_type n) {
+        if ( n < size() )
+            n = size();
+        if ( n == capacity() )
+            return;
+        if ( !n ) {
+            if (m_ptr)
+                alloc_traits::deallocate(allocator, m_ptr, m_capacity);
+            m_ptr = nullptr;
+            m_begin = m_end = 0;
+        }
+        else {
+            const auto new_ptr = alloc_traits::allocate(allocator, n);
+            for (auto i = begin(); i != end(); i++) {
+                alloc_traits::construct(allocator, new_ptr + (i - begin()), std::move(*i));
+                alloc_traits::destroy(allocator, i);
+            }
+            if (m_ptr)
+                alloc_traits::deallocate(allocator, m_ptr, m_capacity);
+            m_end = size();
+            m_begin = 0;
+            m_ptr = new_ptr;
+        }
+        m_capacity = n;
+    }
+
+    void reserve_front(size_type n) {
+        if ( n <= m_begin )
+            return;
+        if ( n + m_end <= m_capacity ) {
+            n -= m_begin;
+            for (auto i = end() - n; i != end(); i++)
+                alloc_traits::construct(allocator, i + n, std::move(*i));
+            std::move_backward(begin(), end() - n, end());
+            for (auto i = begin(); i != begin() + n; i++)
+                alloc_traits::destroy(allocator, i);
+            m_begin += n;
+            m_end += n;
+        }
+        else {
+            const auto new_ptr = alloc_traits::allocate(allocator, n + size());
+            for (auto i = begin(); i != end(); i++) {
+                alloc_traits::construct(allocator, new_ptr + n + (i - begin()), std::move(*i));
+                alloc_traits::destroy(allocator, i);
+            }
+            if (m_ptr)
+                alloc_traits::deallocate(allocator, m_ptr, m_capacity);
+            m_capacity = n + size();
+            m_end = n + size();
+            m_begin = n;
+            m_ptr = new_ptr;
+        }
+    }
+
+    void reserve_back(size_type n) {
+        if ( n <= m_capacity - m_end )
+            return;
+        if ( n <= m_begin ) {
+            n -= m_capacity - m_end;
+            for (auto i = begin(); i != begin() + n; i++)
+                alloc_traits::construct(allocator, i - n, std::move(*i));
+            std::move(begin() + n, end(), begin());
+            for (auto i = end() - n; i != end(); i++)
+                alloc_traits::destroy(allocator, i);
+            m_begin -= n;
+            m_end -= n;
+        }
+        else {
+            const auto new_ptr = alloc_traits::allocate(allocator, n + size());
+            for (auto i = begin(); i != end(); i++) {
+                alloc_traits::construct(allocator, new_ptr + (i - begin()), std::move(*i));
+                alloc_traits::destroy(allocator, i);
+            }
+            m_capacity = n + size();
+            m_end = size();
+            m_begin = 0;
+            if (m_ptr)
+                alloc_traits::deallocate(allocator, m_ptr, m_capacity);
+            m_ptr = new_ptr;
+        }
+    }
+
+    template <typename List>
+    void append(List&& list) {
+        insert(end(), std::cbegin(list), std::cend(list));
+    }
+
+    template <typename List>
+    void prepend(List&& list) {
+        insert(begin(), std::cbegin(list), std::cend(list));
+    }
+
+    template <typename... Args>
+    iterator emplace(const_iterator position, Args&&... args ) {
+        if (position < begin() || position > end())
+            throw std::out_of_range{"non_std::twoway_vector::emplace"};
+        const size_type pos = std::distance(cbegin(), position);
+        auto constructed = insert_aux (position, 1);
+        if (constructed.first <= pos && constructed.second > pos)
+            *std::next(begin(), pos) = T (std::forward<Args>( args )...);
+        else
+            alloc_traits::construct(allocator, std::next(begin(), pos), std::forward<Args>( args )...);
+        return std::next(begin(), pos);
+    }
+
+    reference back() {
+        return *std::prev(end());
+    }
+
+    reference front() {
+        return *begin();
+    }
+
+    const_reference back() const {
+        return *std::prev(end());
+    }
+
+    const_reference front() const {
+        return *begin();
+    }
+
+    void pop_back() {
+        erase(std::prev(end()));
+    }
+
+    void pop_front() {
+        erase(begin());
+    }
+
+    void push_back(value_type&& x) {
+        insert(end(), std::move(x));
+    }
+
+    void push_front(value_type&& x) {
+        insert(begin(), std::move(x));
+    }
+
+    iterator insert(const_iterator position, const value_type& x) {
+        return emplace(position, x);
+    }
+
+    iterator insert(const_iterator position, value_type&& x) {
+        return emplace(position, std::move(x));
+    }
+
+    iterator insert(const_iterator position, std::initializer_list<value_type> list) {
+        if (position < begin() || position > end())
+            throw std::out_of_range{"non_std::twoway_vector::insert"};
+        const size_type pos = std::distance(cbegin(), position);
+        auto constructed = insert_aux (position, list.size());
+        for (size_type i = pos; i < constructed.first; i++)
+            alloc_traits::construct(allocator, std::next(begin(), i), std::move(list[i-pos]));
+        for (size_type i = constructed.second; i < pos + list.size(); i++)
+            alloc_traits::construct(allocator, std::next(begin(), i), std::move(list[i-pos]));
+        auto a = std::max(constructed.first, pos);
+        auto b = std::min(constructed.second, pos + list.size());
+        auto list_a = std::next(list.begin(), a-pos);
+        auto list_b = std::next(list.begin(), b-pos);
+        if (a < b)
+            std::move(list_a, list_b, std::next(begin(), a));
+        return std::next(begin(), pos);
+    }
+
+    iterator insert(const_iterator position, size_type n, const value_type& x) {
+        if (position < begin() || position > end())
+            throw std::out_of_range{"non_std::twoway_vector::insert"};
+        const size_type pos = std::distance(cbegin(), position);
+        auto constructed = insert_aux (position, n);
+        for (size_type i = pos; i < constructed.first; i++)
+            alloc_traits::construct(allocator, std::next(begin(), i), x);
+        for (size_type i = constructed.second; i < pos + n; i++)
+            alloc_traits::construct(allocator, std::next(begin(), i), x);
+        auto a = std::max(constructed.first, pos);
+        auto b = std::min(constructed.second, pos + n);
+        if (a < b)
+            std::fill(std::next(begin(), a), std::next(begin(), b), x);
+        return std::next(begin(), pos);
+    }
+
+    template<typename InputIterator>
+    iterator insert(const_iterator position, InputIterator first, InputIterator last) {
+        if (position < begin() || position > end())
+            throw std::out_of_range{"non_std::twoway_vector::insert"};
+        const size_type pos = std::distance(cbegin(), position);
+        const size_type n = std::distance(first, last);
+        auto constructed = insert_aux (position, n);
+        for (size_type i = pos; i < constructed.first; i++)
+            alloc_traits::construct(allocator, std::next(begin(), i), *first++);
+        auto a = std::max(constructed.first, pos);
+        auto b = std::min(constructed.second, pos + n);
+        auto stop = std::next(first, a < b ? b-a : 0);
+        std::copy(first, stop, std::next(begin(), a));
+        for (size_type i = constructed.second; i < pos + n; i++)
+            alloc_traits::construct(allocator, std::next(begin(), i), *stop++);
+        return std::next(begin(), pos);
+    }
+
+    iterator erase(const_iterator position) {
+        return erase(position, std::next(position));
+    }
+
+    iterator erase(const_iterator first, const_iterator last) {
+        if (first < begin() || first > end() || last < begin() || last > end())
+            throw std::out_of_range{"non_std::twoway_vector::erase"};
+        const auto r = erase_aux(first, last);
+        if (size() < capacity() / 4)
+            reserve(size() * 2);
+        return r;
+    }
+
+    template <typename... Args>
+    void emplace_back(Args&&... args) {
+        emplace(end(), std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void emplace_front(Args&&... args) {
+        emplace(begin(), std::forward<Args>(args)...);
+    }
+
+    void resize(size_type new_size) {
+        if (new_size > size()) {
+            const size_type old_size = size();
+            auto constructed = insert_aux (end(), new_size - old_size);
+            for (size_type i = old_size; i < new_size; i++) {
+                if (constructed.first <= i && constructed.second > i)
+                    *std::next(begin(), i) = T ();
+                else
+                    alloc_traits::construct(allocator, std::next(begin(), i));
+            }
+        }
+        else if (new_size < size())
+            erase(begin() + new_size, end());
+    }
+
+    void shrink_to_fit() { reserve(0); }
+
+    size_type capacity() const { return m_capacity; }
+    size_type size() const { return std::distance(begin(), end()); }
+    bool empty() const { return size() == 0; }
+
+    iterator begin() { return m_ptr + m_begin; }
+    iterator end() { return m_ptr + m_end; }
+    const_iterator begin() const { return m_ptr + m_begin; }
+    const_iterator end() const { return m_ptr + m_end; }
+    const_iterator cbegin() const { return begin(); }
+    const_iterator cend() const { return end(); }
+    reverse_iterator rbegin() { return end(); }
+    reverse_iterator rend() { return begin(); }
+    const_reverse_iterator rbegin() const { return end(); }
+    const_reverse_iterator rend() const { return begin(); }
+    const_reverse_iterator crbegin() const { return end(); }
+    const_reverse_iterator crend() const { return begin(); }
+
+private:
+    auto insert_aux (const_iterator position, size_type n) {
+        const size_type pos = std::distance(cbegin(), position);
+        if (size() + n > capacity()) {
+            if (pos < size()/2)
+                reserve_front(std::max(size(), n));
+            else
+                reserve_back(std::max(size(), n));
+        }
+        if (m_begin >= n && pos < size()/2) {
+            m_begin -= n;
+            for (auto i = begin(); i < begin() + std::min(n, pos); i++)
+                alloc_traits::construct(allocator, i, std::move(i[n]));
+            std::move(begin() + std::min(n, pos) + n, begin() + pos + n, begin() + std::min(n, pos));
+            return std::make_pair(n, pos + n);
+        }
+        else if (m_end + n <= capacity() || capacity() - size() < 8) {
+            if (m_end + n > capacity())
+                reserve_back(std::max(size(), static_cast<size_type>(8)));
+            for (auto i = end() - n; i < end() + std::min(n, size() - pos) - n; i++)
+                alloc_traits::construct(allocator, i + n, std::move(*i));
+            std::move_backward(begin() + pos, end() - std::min(n, size() - pos), end());
+            m_end += n;
+            return std::make_pair(size() - pos - n, size() - n);
+        }
+        else {
+            auto old_m_begin = m_begin;
+            if (pos > m_begin) {
+                for (auto i = m_ptr; i != begin(); i++)
+                    alloc_traits::construct(allocator, i, std::move(i[m_begin]));
+                std::move(begin() + m_begin, begin() + pos, begin());
+                if (n < m_begin) {
+                    for (auto i = end() + n - m_begin; i != end(); i++)
+                        alloc_traits::destroy(allocator, i);
+                    std::move(begin() + pos, end(), m_ptr + pos + n);
+                }
+                else if (n > m_begin) {
+                    for (auto i = end() - n + m_begin; i != end(); i++)
+                        alloc_traits::construct(allocator, i + n - m_begin, std::move(*i));
+                    std::move_backward(begin() + pos, end(), end() + n - m_begin);
+                }
+            }
+            else {
+                for (auto i = m_ptr; i != m_ptr + pos; i++)
+                    alloc_traits::construct(allocator, i, std::move(i[m_begin]));
+                for (auto i = m_ptr + pos; i != begin() - std::min(n, m_begin - pos); i++)
+                    alloc_traits::construct(allocator, i + n, std::move(i[m_begin]));
+                if (n < m_begin) {
+                    for (auto i = end() + n - m_begin; i != end(); i++)
+                        alloc_traits::destroy(allocator, i);
+                    std::move(begin() + m_begin, end(), begin() + n);
+                }
+                else if (n > m_begin) {
+                    for (auto i = end() - n + m_begin; i != end(); i++)
+                        alloc_traits::construct(allocator, i + n - m_begin, std::move(*i));
+                    std::move_backward(begin() + m_begin, end(), end() + n - m_begin);
+                }
+            }
+            m_end += n - m_begin;
+            m_begin = 0;
+            return std::make_pair(old_m_begin, size() - n + old_m_begin);
+        }
+    }
+
+    iterator erase_aux(const_iterator first, const_iterator last) {
+        if (first >= last)
+            return const_cast<iterator>(last);
+        const size_type pos = std::distance(cbegin(), first);
+        if (std::distance(cbegin(), first) + std::distance(cbegin(), last) < size()) {
+            std::move_backward(begin(), first, last);
+            for (auto i = begin(); i != begin() + (last - first); i++)
+                alloc_traits::destroy(allocator, i);
+            m_begin += std::distance(first, last);
+        }
+        else {
+            std::move(last, end(), first);
+            for (auto i = end() - std::distance(first, last); i != end(); i++)
+                alloc_traits::destroy(allocator, i);
+            m_end -= std::distance(first, last);
+        }
+        return std::next(begin(), pos);
+    }
+
+    allocator_type allocator;
+    size_type m_begin = 0;
+    size_type m_end = 0;
+    size_type m_capacity = 0;
+    typename alloc_traits::pointer m_ptr = nullptr;
+};
+
+#endif // TWOWAY_VECTOR_H

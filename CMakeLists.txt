@@ -65,6 +65,7 @@ set(LIBNONSTDCXX_HEADERS ${LIBNONSTDCXX_HEADERS}
     runtime_cast
     stdio_sync_filebuf
     tupleid
+    twoway_vector
 )
 add_library(nonstdc++-extra SHARED
     cxxabi.cpp
