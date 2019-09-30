@@ -22,6 +22,9 @@
 #include <algorithm>
 #include <memory>
 
+namespace non_std
+{
+
 template <typename T, typename Alloc = std::allocator<T>>
 class twoway_vector
 {
@@ -506,5 +509,6 @@ private:
     size_type m_capacity = 0;
     typename alloc_traits::pointer m_ptr = nullptr;
 };
+}
 
 #endif // TWOWAY_VECTOR_H
