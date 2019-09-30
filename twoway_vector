@@ -79,12 +79,12 @@ public:
     }
 
     twoway_vector(const twoway_vector&& other) : allocator{other.allocator} {
-        assign(other.begin(), other.end());
+        assign(ubegin(std::move(other)), uend(std::move(other)));
     }
 
     template<typename List>
     twoway_vector(List&& list, const allocator_type& a = allocator_type{}) : allocator{a} {
-        assign(std::begin(list), std::end(list));
+        assign(ubegin(std::forward<List>(list)), uend(std::forward<List>(list)));
     }
 
     ~twoway_vector() {
@@ -250,12 +250,12 @@ public:
 
     template <typename List>
     void append(List&& list) {
-        insert(end(), std::cbegin(list), std::cend(list));
+        insert(end(), ubegin(std::forward<List>(list)), uend(std::forward<List>(list)));
     }
 
     template <typename List>
     void prepend(List&& list) {
-        insert(begin(), std::cbegin(list), std::cend(list));
+        insert(begin(), ubegin(std::forward<List>(list)), uend(std::forward<List>(list)));
     }
 
     template <typename... Args>
@@ -501,6 +501,24 @@ private:
             m_end -= std::distance(first, last);
         }
         return std::next(begin(), pos);
+    }
+
+    template<typename List>
+    auto ubegin(List& list) {
+        return std::begin(list);
+    }
+    template<typename List>
+    auto uend(List& list) {
+        return std::end(list);
+    }
+
+    template<typename List>
+    auto ubegin(std::remove_reference_t<List>&& list) {
+        return std::make_move_iterator(std::begin(list));
+    }
+    template<typename List>
+    auto uend(std::remove_reference_t<List>&& list) {
+        return std::make_move_iterator(std::end(list));
     }
 
     allocator_type allocator;
