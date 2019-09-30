@@ -50,19 +50,22 @@ public:
 
     twoway_vector(std::initializer_list<value_type> l, const allocator_type& a = allocator_type{})
         : allocator{a} {
-        append(l);
+        assign(l);
     }
 
     twoway_vector(const twoway_vector& other) : allocator{other.allocator} {
-        append(other);
+        assign(other.begin(), other.end());
     }
 
     twoway_vector(twoway_vector&& other) : allocator{other.allocator} {
-        swap(other);
+        if (allocator == other.allocator)
+            swap(other);
+        else
+            assign(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
     }
 
     twoway_vector(const twoway_vector& other, const allocator_type& a) : allocator{a} {
-        append(other);
+        assign(other.begin(), other.end());
     }
 
     twoway_vector(twoway_vector&& other, const allocator_type& a) : allocator{a} {
@@ -70,6 +73,15 @@ public:
             swap(other);
         else
             assign(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
+    }
+
+    twoway_vector(const twoway_vector&& other) : allocator{other.allocator} {
+        assign(other.begin(), other.end());
+    }
+
+    template<typename List>
+    twoway_vector(List&& list, const allocator_type& a = allocator_type{}) : allocator{a} {
+        assign(std::begin(list), std::end(list));
     }
 
     ~twoway_vector() {
