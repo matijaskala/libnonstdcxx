@@ -1,6 +1,6 @@
 /*
  * Stack-based union container
- * Copyright (C) 2014-2018  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2014-2019  Matija Skala <mskala@gmx.com>
  *
  * This library is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,7 @@
 #ifndef NON_STD_BASIC_VARIANT
 #define NON_STD_BASIC_VARIANT
 
-#include <stdexcept>
-#include "runtime_cast"
+#include <sstream>
 
 namespace non_std
 {
@@ -95,14 +94,63 @@ class basic_variant {
     typename std::aligned_union<0, _Types...>::type data;
     decltype(manager::nulltype()) type{manager::nulltype()};
 
+    struct helpers {
+        template< typename From, typename To >
+        struct lexical_cast {
+            To operator()(From x) {
+                std::stringstream stream;
+                typename std::remove_reference<To>::type y;
+                if ( !( stream << x ) || !( stream >> y ) || stream.rdbuf()->in_avail() )
+                    throw bad_get();
+                return std::move(y);
+            }
+        };
+
+        template< typename From, typename To,
+                  typename = decltype(static_cast<To>(std::declval<From>())) >
+        static std::true_type test_is_static_castable(int);
+        template< typename, typename >
+        static std::false_type test_is_static_castable(...);
+        template< typename From, typename To >
+        using is_static_castable = decltype(test_is_static_castable<From,To>(0));
+
+        template< typename From, typename To,
+                  typename = decltype(lexical_cast<From,To>()(std::declval<From>())) >
+        static std::true_type test_is_lexical_castable(int);
+        template< typename, typename >
+        static std::false_type test_is_lexical_castable(...);
+        template< typename From, typename To >
+        using is_lexical_castable = decltype(test_is_lexical_castable<From,To>(0));
+
+        template< typename From, typename To,
+                  bool = is_static_castable<From,To>{},
+                  bool = is_lexical_castable<From,To>{} >
+        struct internal_cast {
+            To operator()(From) { throw bad_get(); }
+        };
+        template< typename From, typename To, bool b >
+        struct internal_cast<From,To,true,b> {
+            To operator()(From x) { return static_cast<To>(x); }
+        };
+        template< typename From, typename To >
+        struct internal_cast<From,To,false,true> {
+            To operator()(From x) { return lexical_cast<From,To>()(x); }
+        };
+    };
+
+    template< typename From, typename To >
+    using internal_cast = typename helpers::template internal_cast<From,To>;
+
     struct visitors {
         template< typename _Type >
         struct get {
             typename std::aligned_storage<sizeof(_Type),alignof(_Type)>::type actual_value{};
             _Type& value = reinterpret_cast<_Type&>(actual_value);
             ~get ( ) { value.~_Type(); }
-            template< typename _Arg >
-            void operator() ( _Arg* __arg ) { ::new(&value) _Type(runtime_cast<_Type> ( *__arg )); }
+            template< typename Arg >
+            void operator() ( Arg* __arg ) {
+                ::new(&value) _Type(internal_cast<Arg&,_Type> ()( *__arg ));
+            }
             void operator() ( _Type* data ) { ::new(&value) _Type(*data); }
             void operator() ( std::nullptr_t ) { throw bad_get(); }
         };
@@ -112,8 +160,10 @@ class basic_variant {
             typename std::aligned_storage<sizeof(_Type),alignof(_Type)>::type actual_value{};
             _Type& value = reinterpret_cast<_Type&>(actual_value);
             ~get ( ) { value.~_Type(); }
-            template< typename _Arg >
-            void operator() ( _Arg* __arg ) { ::new(&value) _Type(runtime_cast<_Type> (std::move ( *__arg ))); }
+            template< typename Arg >
+            void operator() ( Arg* __arg ) {
+                ::new(&value) _Type(internal_cast<Arg&&,_Type> ()(std::move ( *__arg )));
+            }
             void operator() ( _Type* data ) { ::new(&value) _Type(std::move ( *data )); }
             void operator() ( std::nullptr_t ) { throw bad_get(); }
         };
@@ -218,8 +268,5 @@ private:
 
 };
 }
-
-template< typename _Res, typename _Manager >
-inline _Res runtime_cast ( non_std::basic_variant<_Manager> s ) { return s.template as<_Res> (); }
 
 #endif // NON_STD_BASIC_VARIANT
