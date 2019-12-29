@@ -20,8 +20,9 @@
 #ifndef NON_STD_SIGNAL
 #define NON_STD_SIGNAL
 
-#include <list>
 #include <functional>
+#include <list>
+#include <mutex>
 
 namespace non_std
 {
@@ -36,6 +37,7 @@ class slot
     std::function<void(Args...)> m_func;
     std::list<signal<Args...>*> m_signals;
     void* m_data{nullptr};
+    std::mutex m_mutex;
 
     template< class Object >
     struct simple_bind {
@@ -83,9 +85,12 @@ signal<Args...>::signal ( void* data )
     : slot<Args...> {
         [data,this] ( Args&&... args ) {
             for ( slot<Args...>* slot: m_slots ) {
+                slot->m_mutex.lock();
+                auto tmp = slot->m_data;
                 slot->m_data = data;
                 (*slot) ( std::forward<Args> ( args )... );
-                slot->m_data = nullptr;
+                slot->m_data = tmp;
+                slot->m_mutex.unlock();
             }
         }
     } {}
