@@ -48,13 +48,18 @@ class slot
     };
 
 public:
+    slot() : slot{[](Args&&...){}} {}
+
     template< typename Functor >
-    slot ( Functor func ) : m_func{func} {}
+    slot ( Functor&& func ) : m_func{std::forward<Functor>(func)} {}
 
     template< typename Object >
     slot ( void (Object::*method) (Args...), Object* obj ) : m_func{simple_bind<Object>{method,obj}} {}
 
     ~slot();
+
+    template< typename Functor >
+    slot& operator= ( Functor&& func ) { m_func = std::forward<Functor>(func); return *this; }
 
     template<typename... Args2>
     void operator() ( Args2&&... args ) { m_func ( std::forward<Args2> ( args )... ); }

@@ -1,6 +1,6 @@
 /*
  * Stack-based union container
- * Copyright (C) 2014-2019  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2014-2021  Matija Skala <mskala@gmx.com>
  *
  * This library is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -112,12 +112,12 @@ class basic_variant {
     struct helpers {
         template< typename From, typename To >
         struct lexical_cast {
-            To operator()(From x) {
+            To operator()(From&& x) {
                 std::stringstream stream;
                 typename std::remove_reference<To>::type y;
                 if ( !( stream << x ) || !( stream >> y ) || stream.rdbuf()->in_avail() )
                     throw bad_get();
-                return std::move(y);
+                return y;
             }
         };
 
@@ -130,6 +130,8 @@ class basic_variant {
         using is_static_castable = decltype(test_is_static_castable<From,To>(0));
 
         template< typename From, typename To,
+                  typename = decltype(std::declval<std::stringstream>() << std::declval<From>()),
+                  typename = decltype(std::declval<std::stringstream>() >> std::declval<std::remove_reference<To>::type>()),
                   typename = decltype(lexical_cast<From,To>()(std::declval<From>())) >
         static std::true_type test_is_lexical_castable(int);
         template< typename, typename >
@@ -141,15 +143,15 @@ class basic_variant {
                   bool = is_static_castable<From,To>{},
                   bool = is_lexical_castable<From,To>{} >
         struct internal_cast {
-            To operator()(From) { throw bad_get(); }
+            To operator()(From&&) { throw bad_get(); }
         };
         template< typename From, typename To, bool b >
         struct internal_cast<From,To,true,b> {
-            To operator()(From x) { return static_cast<To>(x); }
+            To operator()(From&& x) { return static_cast<To>(x); }
         };
         template< typename From, typename To >
         struct internal_cast<From,To,false,true> {
-            To operator()(From x) { return lexical_cast<From,To>()(x); }
+            To operator()(From&& x) { return lexical_cast<From,To>()(std::forward<From>(x)); }
         };
     };
 
@@ -177,7 +179,7 @@ class basic_variant {
             ~get ( ) { value.~Type(); }
             template< typename Arg >
             void operator() ( Arg* data ) {
-                ::new(&value) Type(internal_cast<Arg&&,Type> ()(std::move ( *data )));
+                ::new(&value) Type(internal_cast<Arg,Type> ()(std::move ( *data )));
             }
             void operator() ( Type* data ) { ::new(&value) Type(std::move ( *data )); }
             void operator() ( std::nullptr_t ) { throw bad_get(); }
