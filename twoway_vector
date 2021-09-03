@@ -1,6 +1,6 @@
 /*
  * High-performance replacement for std::vector
- * Copyright (C) 2018-2021  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2018-2021 Matija Skala <mskala@gmx.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -296,8 +296,16 @@ public:
         erase(begin());
     }
 
+    void push_back(const value_type& x) {
+        insert(end(), x);
+    }
+
     void push_back(value_type&& x) {
         insert(end(), std::move(x));
+    }
+
+    void push_front(const value_type& x) {
+        insert(begin(), x);
     }
 
     void push_front(value_type&& x) {
@@ -490,13 +498,13 @@ private:
             return const_cast<iterator>(last);
         const size_type pos = std::distance(cbegin(), first);
         if (std::distance(cbegin(), first) + std::distance(cbegin(), last) < size()) {
-            std::move_backward(begin(), first, last);
+            std::move_backward(begin(), const_cast<iterator>(first), const_cast<iterator>(last));
             for (auto i = begin(); i != begin() + (last - first); i++)
                 alloc_traits::destroy(allocator, i);
             m_begin += std::distance(first, last);
         }
         else {
-            std::move(last, end(), first);
+            std::move(const_cast<iterator>(last), end(), const_cast<iterator>(first));
             for (auto i = end() - std::distance(first, last); i != end(); i++)
                 alloc_traits::destroy(allocator, i);
             m_end -= std::distance(first, last);
