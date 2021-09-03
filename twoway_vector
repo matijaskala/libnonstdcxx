@@ -1,6 +1,6 @@
 /*
  * High-performance replacement for std::vector
- * Copyright (C) 2018-2019  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2018-2021  Matija Skala <mskala@gmx.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <stdexcept>
 
 namespace non_std
 {

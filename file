@@ -1,6 +1,6 @@
 /*
  * Information about a file
- * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2014-2021 Matija Skala <mskala@gmx.com>
  *
  * This library is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,14 @@
 #ifndef NON_STD_FILE
 #define NON_STD_FILE
 
+#include <filesystem>
 #include <string>
-#include <sys/stat.h>
 #include "directory"
 
 namespace non_std
 {
 
-class file
+class [[deprecated]] file
 {
 public:
     enum filetype {
@@ -41,36 +41,61 @@ public:
     };
 
     file ( std::string fullname ) {
-	while ( fullname.back() == '/' )
-	    fullname.pop_back();
-	auto l = fullname.rfind ( '/' );
-	m_path = fullname.substr ( 0, l );
-	m_name = fullname.substr ( l + 1 );
+        while ( fullname.back() == '/' )
+            fullname.pop_back();
+        auto l = fullname.rfind ( '/' );
+        m_path = fullname.substr ( 0, l );
+        m_name = fullname.substr ( l + 1 );
 
-	while (m_path.back() == '/')
-	    m_path.pop_back();
-	refresh();
+        while (m_path.back() == '/')
+            m_path.pop_back();
+        refresh();
+    }
+
+    file ( std::filesystem::path p ) {
+        m_path = p.parent_path();
+        m_name = p.filename();
+        refresh();
     }
 
     file ( directory::entry e ) {
-	m_path = e.path();
-	m_name = e.name();
+        m_path = e.path();
+        m_name = e.name();
 
-	while (m_path.back() == '/')
-	    m_path.pop_back();
-	refresh();
+        while (m_path.back() == '/')
+            m_path.pop_back();
+        refresh();
     }
 
     void refresh() {
-        struct stat64 st;
-#ifdef _WIN32
-        stat64 ( fullname().c_str(), &st );
-#else
-        lstat64 ( fullname().c_str(), &st );
-#endif
+        auto entry = std::filesystem::directory_entry(fullname());
 
-        m_mode = st.st_mode & 07777;
-        m_type = static_cast<filetype> ( st.st_mode >> 13 );
+        m_mode = static_cast<std::uint16_t>(entry.status().permissions());
+        switch (entry.symlink_status().type()) {
+            case std::filesystem::file_type::fifo:
+                m_type = pipe;
+                break;
+            case std::filesystem::file_type::character:
+                m_type = character_device;
+                break;
+            case std::filesystem::file_type::directory:
+                m_type = directory;
+                break;
+            case std::filesystem::file_type::block:
+                m_type = block_device;
+                break;
+            case std::filesystem::file_type::regular:
+                m_type = regular;
+                break;
+            case std::filesystem::file_type::symlink:
+                m_type = symlink;
+                break;
+            case std::filesystem::file_type::socket:
+                m_type = socket;
+                break;
+            default:
+                m_type = static_cast<filetype> (7);
+        }
     }
 
     const std::string& name() const { return m_name; }

@@ -1,6 +1,6 @@
 /*
  * Lexical cast
- * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2014-2021 Matija Skala <mskala@gmx.com>
  *
  * This library is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@ public:
 template < typename _Tp1, typename _Tp2 > using __both_strings = std::integral_constant<bool,non_std::is_string<_Tp1>::value && non_std::is_string<_Tp2>::value>;
 
 template < typename _Res, typename _Arg >
-inline typename std::enable_if<!__both_strings<_Res,_Arg>::value,_Res>::type lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
+inline typename std::enable_if<!__both_strings<_Res,_Arg>::value,_Res>::type lexical_cast ( const _Arg& s ) noexcept(false) {
     std::stringstream stream;
     _Res r;
     if ( !( stream << s ) || !( stream >> r ) || stream.rdbuf()->in_avail() )
@@ -48,7 +48,7 @@ inline typename std::enable_if<!__both_strings<_Res,_Arg>::value,_Res>::type lex
 }
 
 template < typename _Res, typename _Arg >
-inline typename std::enable_if<__both_strings<_Res,_Arg>::value,_Res>::type lexical_cast ( const _Arg& s ) throw ( non_std::bad_lexical_cast ) {
+inline typename std::enable_if<__both_strings<_Res,_Arg>::value,_Res>::type lexical_cast ( const _Arg& s ) noexcept(false) {
     _Res _1str;
     {
         std::locale l;
@@ -71,7 +71,7 @@ inline typename std::enable_if<__both_strings<_Res,_Arg>::value,_Res>::type lexi
     return _1str;
 }
 
-template<> inline std::string lexical_cast<std::string> ( const char32_t& s ) throw ( non_std::bad_lexical_cast ) {
+template<> inline std::string lexical_cast<std::string> ( const char32_t& s ) noexcept(false) {
     char32_t c32 = s;
     size_t len;
     if ( c32 < 0x80 )
@@ -100,14 +100,14 @@ template<> inline std::string lexical_cast<std::string> ( const char32_t& s ) th
     return c8;
 }
 
-template<> inline std::string lexical_cast<std::string> ( const std::u32string& s ) throw ( non_std::bad_lexical_cast ) {
+template<> inline std::string lexical_cast<std::string> ( const std::u32string& s ) noexcept(false) {
     std::string r;
     for ( auto c: s )
         r += lexical_cast<std::string>(c);
     return r;
 }
 
-template<> inline std::string lexical_cast<std::string> ( const wchar_t& s ) throw ( non_std::bad_lexical_cast ) {
+template<> inline std::string lexical_cast<std::string> ( const wchar_t& s ) noexcept(false) {
     char p[]{0,0,0,0};
     std::size_t bytes;
     wchar_t wc = s;
@@ -129,14 +129,14 @@ template<> inline std::string lexical_cast<std::string> ( const wchar_t& s ) thr
     return p;
 }
 
-template<> inline std::string lexical_cast<std::string> ( const std::wstring& s ) throw ( non_std::bad_lexical_cast ) {
+template<> inline std::string lexical_cast<std::string> ( const std::wstring& s ) noexcept(false) {
     std::string r;
     for ( auto c: s )
         r += lexical_cast<std::string>(c);
     return r;
 }
 
-template<> inline std::string lexical_cast<std::string> ( const std::string& s ) throw ( non_std::bad_lexical_cast ) { return s; }
-template<> inline std::wstring lexical_cast<std::wstring> ( const std::wstring& s ) throw ( non_std::bad_lexical_cast ) { return s; }
+template<> inline std::string lexical_cast<std::string> ( const std::string& s ) noexcept(false) { return s; }
+template<> inline std::wstring lexical_cast<std::wstring> ( const std::wstring& s ) noexcept(false) { return s; }
 
 #endif // NON_STD_LEXICAL_CAST

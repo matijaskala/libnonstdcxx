@@ -1,6 +1,6 @@
 /*
  * Directory contents
- * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2014-2021 Matija Skala <mskala@gmx.com>
  *
  * This library is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,7 +26,7 @@
 namespace non_std
 {
 
-class [[gnu::visibility("default")]] directory
+class [[deprecated, gnu::visibility("default")]] directory
 {
 public:
     class entry {

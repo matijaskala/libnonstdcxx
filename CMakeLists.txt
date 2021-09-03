@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8.12)
 find_package(ECM 1.3.0 REQUIRED NO_MODULE)
 
 set(CMAKE_MODULE_PATH ${ECM_MODULE_DIR})
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(GNUInstallDirs)
@@ -51,7 +51,7 @@ add_library(nonstdc++ SHARED
     xterm.cpp
 )
 target_compile_features(nonstdc++
-    INTERFACE cxx_return_type_deduction)
+    PUBLIC cxx_std_17)
 if(NOT NO_EXTRA)
 set(LIBNONSTDCXX_TARGETS ${LIBNONSTDCXX_TARGETS} nonstdc++-extra)
 set(LIBNONSTDCXX_HEADERS ${LIBNONSTDCXX_HEADERS}

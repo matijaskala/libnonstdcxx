@@ -1,6 +1,6 @@
 /*
  * Directory contents
- * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2014-2021 Matija Skala <mskala@gmx.com>
  *
  * This library is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,28 +19,17 @@
 
 #include "directory"
 
-#include <dirent.h>
 #include <algorithm>
-#include <cerrno>
+#include <filesystem>
 
 using namespace std;
 using namespace non_std;
 
 directory::directory ( string path ) : m_entries{}, m_path{path}
 {
-    auto dir = opendir ( path.c_str() );
-    if ( !dir )
-        return;
-
-    errno = 0;
-    while ( auto entry = readdir ( dir ) ) {
-        if ( errno )
-            break;
-        m_entries.push_back ( {entry->d_name,path} );
-    }
+    for ( auto&& entry: filesystem::directory_iterator ( path ) )
+        m_entries.push_back ( {entry.path().filename(), path} );
 
     m_entries.shrink_to_fit();
     sort ( m_entries.begin(), m_entries.end(), [] ( const entry& a, const entry&  b ) { return a.name() < b.name(); } );
-
-    closedir ( dir );
 }
