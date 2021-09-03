@@ -83,7 +83,7 @@ public:
         assign(ubegin(std::move(other)), uend(std::move(other)));
     }
 
-    template<typename List>
+    template<typename List, typename = decltype(ubegin(std::declval<List>())), typename = decltype(uend(std::declval<List>()))>
     twoway_vector(List&& list, const allocator_type& a = allocator_type{}) : allocator{a} {
         assign(ubegin(std::forward<List>(list)), uend(std::forward<List>(list)));
     }
