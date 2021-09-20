@@ -24,11 +24,36 @@
 
 namespace non_std
 {
+template< typename... Types >
+class basic_variant;
+}
+template< typename Type, typename... OtherTypes >
+inline bool operator== ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+template< typename Type, typename... OtherTypes >
+inline bool operator!= ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+template< typename Type, typename... OtherTypes >
+inline bool operator< ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+template< typename Type, typename... OtherTypes >
+inline bool operator> ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+template< typename Type, typename... OtherTypes >
+inline bool operator<= ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+template< typename Type, typename... OtherTypes >
+inline bool operator>= ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+
+namespace non_std
+{
 
 class bad_get : public std::exception {
 public:
     virtual const char* what() const noexcept override {
         return "non_std::bad_get";
+    }
+};
+
+class bad_comparison : public std::exception {
+public:
+    virtual const char* what() const noexcept override {
+        return "non_std::bad_comparison";
     }
 };
 
@@ -65,19 +90,21 @@ public:
     }
 
     template< class Visitor >
-    static void apply_visitor ( Visitor& visitor, decltype(next::nulltype()) type, void* data ) {
+    static auto apply_visitor ( Visitor& visitor, decltype(next::nulltype()) type, void* data )
+    -> decltype(visitor(static_cast<FirstType*>(data))) {
         if ( type == current_type() )
-            visitor ( static_cast<FirstType*> ( data ) );
+            return visitor ( static_cast<FirstType*> ( data ) );
         else
-            next::apply_visitor ( visitor, type, data );
+            return next::apply_visitor ( visitor, type, data );
     }
 
     template< class Visitor >
-    static void apply_visitor ( Visitor& visitor, decltype(next::nulltype()) type, const void* data ) {
+    static auto apply_visitor ( Visitor& visitor, decltype(next::nulltype()) type, const void* data )
+    -> decltype(visitor(static_cast<const FirstType*>(data))) {
         if ( type == current_type() )
-            visitor ( static_cast<const FirstType*> ( data ) );
+            return visitor ( static_cast<const FirstType*> ( data ) );
         else
-            next::apply_visitor ( visitor, type, data );
+            return next::apply_visitor ( visitor, type, data );
     }
 };
 
@@ -93,10 +120,11 @@ public:
     }
 
     template< class Visitor >
-    static void apply_visitor ( Visitor& visitor, decltype(nulltype()) type, const void* data ) {
+    static auto apply_visitor ( Visitor& visitor, decltype(nulltype()) type, const void* data )
+    -> decltype(visitor(nullptr)) {
         (void)data;
         if ( type == current_type() )
-            visitor ( nullptr );
+            return visitor ( nullptr );
         else
             throw std::logic_error ( "basic_variant::apply_visitor invalid data type" );
     }
@@ -110,29 +138,16 @@ class basic_variant {
     decltype(manager::nulltype()) type{manager::nulltype()};
 
     struct helpers {
-        template< typename From, typename To >
-        struct lexical_cast {
-            To operator()(From&& x) {
-                std::stringstream stream;
-                typename std::remove_reference<To>::type y;
-                if ( !( stream << x ) || !( stream >> y ) || stream.rdbuf()->in_avail() )
-                    throw bad_get();
-                return y;
-            }
-        };
-
-        template< typename From, typename To,
-                  typename = decltype(static_cast<To>(std::declval<From>())) >
+        template< typename From, typename To, typename = decltype(static_cast<To>(std::declval<From>())) >
         static std::true_type test_is_static_castable(int);
         template< typename, typename >
         static std::false_type test_is_static_castable(...);
         template< typename From, typename To >
         using is_static_castable = decltype(test_is_static_castable<From,To>(0));
 
-        template< typename From, typename To,
-                  typename = decltype(std::declval<std::stringstream>() << std::declval<From>()),
+        template< typename From, typename To, typename = typename std::enable_if<!std::is_reference<To>{}>::type,
                   typename = decltype(std::declval<std::stringstream>() >> std::declval<std::remove_reference<To>::type>()),
-                  typename = decltype(lexical_cast<From,To>()(std::declval<From>())) >
+                  typename = decltype(std::declval<std::stringstream>() << std::declval<From>()) >
         static std::true_type test_is_lexical_castable(int);
         template< typename, typename >
         static std::false_type test_is_lexical_castable(...);
@@ -151,38 +166,77 @@ class basic_variant {
         };
         template< typename From, typename To >
         struct internal_cast<From,To,false,true> {
-            To operator()(From&& x) { return lexical_cast<From,To>()(std::forward<From>(x)); }
+            To operator()(From&& x) {
+                std::stringstream stream;
+                To y;
+                if ( !( stream << x ) || !( stream >> y ) || stream.rdbuf()->in_avail() )
+                    throw bad_get();
+                return y;
+            }
         };
-    };
 
-    template< typename From, typename To >
-    using internal_cast = typename helpers::template internal_cast<From,To>;
+#define COMPARISON(NAME,OP) \
+        template< typename Type1, typename Type2, \
+                  typename = decltype(const_cast<bool>(std::declval<Type1>() OP std::declval<Type2>())) > \
+        static std::true_type test_are_##NAME##_comparable(int); \
+        template< typename, typename > \
+        static std::false_type test_are_##NAME##_comparable(...); \
+        template< typename Type1, typename Type2 > \
+        using are_##NAME##_comparable = decltype(test_are_##NAME##_comparable<Type1,Type2>(0)); \
+\
+        template< typename Type1, typename Type2, \
+                  bool = are_##NAME##_comparable<Type1,Type2>{} > \
+        struct NAME##_compare { \
+            bool operator()(const Type1&, const Type2&) { throw bad_comparison(); } \
+        }; \
+        template< typename Type1, typename Type2 > \
+        struct NAME##_compare<Type1,Type2,true> { \
+            bool operator()(const Type1& x, const Type2& y) { return x OP y; } \
+        };
+
+        COMPARISON(eq,==)
+        COMPARISON(ne,!=)
+        COMPARISON(lt,<)
+        COMPARISON(gt,>)
+        COMPARISON(le,<=)
+        COMPARISON(ge,>=)
+#undef COMPARISON
+    };
 
     struct visitors {
         template< typename Type >
-        struct get {
-            typename std::aligned_storage<sizeof(Type),alignof(Type)>::type actual_value{};
-            Type& value = reinterpret_cast<Type&>(actual_value);
-            ~get ( ) { value.~Type(); }
+        struct is_type {
             template< typename Arg >
-            void operator() ( Arg* data ) {
-                ::new(&value) Type(internal_cast<Arg&,Type> ()( *data ));
+            bool operator() ( Arg* ) { return false; }
+            bool operator() ( Type* ) { return true; }
+            bool operator() ( std::nullptr_t ) { return false; }
+        };
+
+        template< typename Type >
+        struct get {
+            template< typename Arg >
+            Type operator() ( Arg* data ) {
+                return typename helpers::template internal_cast<Arg&,Type> ()( *data );
             }
-            void operator() ( Type* data ) { ::new(&value) Type(*data); }
-            void operator() ( std::nullptr_t ) { throw bad_get(); }
+            Type operator() ( Type* data ) { return *data; }
+            Type operator() ( std::nullptr_t ) { throw bad_get(); }
+        };
+
+        template< typename Type >
+        struct get<Type&> {
+            Type& operator() ( Type* data ) { return *data; }
+            Type& operator() ( std::nullptr_t ) { throw bad_get(); }
+            Type& operator() ( ... ) { throw bad_get(); }
         };
 
         template<typename Type>
         struct get<Type&&> {
-            typename std::aligned_storage<sizeof(Type),alignof(Type)>::type actual_value{};
-            Type& value = reinterpret_cast<Type&>(actual_value);
-            ~get ( ) { value.~Type(); }
             template< typename Arg >
-            void operator() ( Arg* data ) {
-                ::new(&value) Type(internal_cast<Arg,Type> ()(std::move ( *data )));
+            Type operator() ( Arg* data ) {
+                return typename helpers::template internal_cast<Arg,Type> ()(std::move ( *data ));
             }
-            void operator() ( Type* data ) { ::new(&value) Type(std::move ( *data )); }
-            void operator() ( std::nullptr_t ) { throw bad_get(); }
+            Type operator() ( Type* data ) { return std::move ( *data ); }
+            Type operator() ( std::nullptr_t ) { throw bad_get(); }
         };
 
         struct copy {
@@ -218,7 +272,52 @@ class basic_variant {
             void operator() ( Type* data ) { data->~Type(); }
             void operator() ( std::nullptr_t ) {}
         };
+
+#define COMPARISON(NAME) \
+        template<typename Type> \
+        struct NAME { \
+            const Type* other; \
+            bool value; \
+            template< typename Arg > \
+            void operator() ( Arg* data ) { value = typename helpers::template NAME##_compare<Arg, Type>()(*data, *other); } \
+            void operator() ( std::nullptr_t ) {} \
+        }; \
+\
+        template<typename Type> \
+        struct NAME##2 { \
+            const Type* other; \
+            bool value; \
+            template< typename Arg > \
+            void operator() ( Arg* data ) { value = typename helpers::template NAME##_compare<Type, Arg>()(*other, *data); } \
+            void operator() ( std::nullptr_t ) {} \
+        };
+
+        COMPARISON(eq)
+        COMPARISON(ne)
+        COMPARISON(lt)
+        COMPARISON(gt)
+        COMPARISON(le)
+        COMPARISON(ge)
+#undef COMPARISON
     };
+
+    template< typename Type, typename... OtherTypes >
+    friend inline bool ::operator== ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+
+    template< typename Type, typename... OtherTypes >
+    friend inline bool ::operator!= ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+
+    template< typename Type, typename... OtherTypes >
+    friend inline bool ::operator< ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+
+    template< typename Type, typename... OtherTypes >
+    friend inline bool ::operator> ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+
+    template< typename Type, typename... OtherTypes >
+    friend inline bool ::operator<= ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
+
+    template< typename Type, typename... OtherTypes >
+    friend inline bool ::operator>= ( const Type& x, const non_std::basic_variant<OtherTypes...>& y );
 
 public:
     basic_variant ( ) = default;
@@ -296,16 +395,121 @@ public:
         return *this;
     }
 
-    bool is_null () const { return type == manager::nulltype(); }
+    template< typename... OtherTypes >
+    bool operator== ( const basic_variant<OtherTypes...>& other ) {
+        if (&other != static_cast<void*>(this)) {
+            typename visitors::template eq<basic_variant<OtherTypes...>> visitor{&other,0};
+            apply_visitor ( visitor );
+            return visitor.value;
+        }
+        return true;
+    }
+
+    template< typename Type >
+    bool operator== ( const Type& other ) {
+        typename visitors::template eq<Type> visitor{&other,0};
+        apply_visitor ( visitor );
+        return visitor.value;
+    }
+
+    template< typename... OtherTypes >
+    bool operator!= ( const basic_variant<OtherTypes...>& other ) {
+        if (&other != static_cast<void*>(this)) {
+            typename visitors::template ne<basic_variant<OtherTypes...>> visitor{&other,0};
+            apply_visitor ( visitor );
+            return visitor.value;
+        }
+        return true;
+    }
+
+    template< typename Type >
+    bool operator!= ( const Type& other ) {
+        typename visitors::template ne<Type> visitor{&other,0};
+        apply_visitor ( visitor );
+        return visitor.value;
+    }
+
+    template< typename... OtherTypes >
+    bool operator< ( const basic_variant<OtherTypes...>& other ) {
+        if (&other != static_cast<void*>(this)) {
+            typename visitors::template lt<basic_variant<OtherTypes...>> visitor{&other,0};
+            apply_visitor ( visitor );
+            return visitor.value;
+        }
+        return true;
+    }
+
+    template< typename Type >
+    bool operator< ( const Type& other ) {
+        typename visitors::template lt<Type> visitor{&other,0};
+        apply_visitor ( visitor );
+        return visitor.value;
+    }
+
+    template< typename... OtherTypes >
+    bool operator> ( const basic_variant<OtherTypes...>& other ) {
+        if (&other != static_cast<void*>(this)) {
+            typename visitors::template gt<basic_variant<OtherTypes...>> visitor{&other,0};
+            apply_visitor ( visitor );
+            return visitor.value;
+        }
+        return true;
+    }
+
+    template< typename Type >
+    bool operator> ( const Type& other ) {
+        typename visitors::template gt<Type> visitor{&other,0};
+        apply_visitor ( visitor );
+        return visitor.value;
+    }
+
+    template< typename... OtherTypes >
+    bool operator<= ( const basic_variant<OtherTypes...>& other ) {
+        if (&other != static_cast<void*>(this)) {
+            typename visitors::template le<basic_variant<OtherTypes...>> visitor{&other,0};
+            apply_visitor ( visitor );
+            return visitor.value;
+        }
+        return true;
+    }
+
+    template< typename Type >
+    bool operator<= ( const Type& other ) {
+        typename visitors::template le<Type> visitor{&other,0};
+        apply_visitor ( visitor );
+        return visitor.value;
+    }
+
+    template< typename... OtherTypes >
+    bool operator>= ( const basic_variant<OtherTypes...>& other ) {
+        if (&other != static_cast<void*>(this)) {
+            typename visitors::template ge<basic_variant<OtherTypes...>> visitor{&other,0};
+            apply_visitor ( visitor );
+            return visitor.value;
+        }
+        return true;
+    }
+
+    template< typename Type >
+    bool operator>= ( const Type& other ) {
+        typename visitors::template ge<Type> visitor{&other,0};
+        apply_visitor ( visitor );
+        return visitor.value;
+    }
+
+    bool operator! () const { return is<void>(); }
+    explicit operator bool () const { return !is<void>(); }
 
     template< typename Visitor >
-    void apply_visitor ( Visitor& visitor ) {
-        manager::apply_visitor ( visitor, type, std::addressof ( data ) );
+    auto apply_visitor ( Visitor&& visitor )
+    -> decltype(manager::apply_visitor(visitor, type, std::addressof(data))) {
+        return manager::apply_visitor ( visitor, type, std::addressof ( data ) );
     }
 
     template< typename Visitor >
-    void apply_visitor ( Visitor& visitor ) const {
-        manager::apply_visitor ( visitor, type, std::addressof ( data ) );
+    auto apply_visitor ( Visitor&& visitor ) const
+    -> decltype(manager::apply_visitor(visitor, type, std::addressof(data))) {
+        return manager::apply_visitor ( visitor, type, std::addressof ( data ) );
     }
 
     void reset () {
@@ -315,17 +519,25 @@ public:
     }
 
     template< typename Type >
-    typename std::remove_reference<Type>::type as () {
+    auto as ()
+    -> decltype(apply_visitor(std::declval<typename visitors::template get<Type>>())) {
         typename visitors::template get<Type> visitor;
-        apply_visitor ( visitor );
-        return std::move ( visitor.value );
+        return apply_visitor ( visitor );
     }
 
     template< typename Type >
-    typename std::remove_reference<Type>::type as () const {
+    auto as () const
+    -> decltype(apply_visitor(std::declval<typename visitors::template get<Type>>())) {
         typename visitors::template get<Type> visitor;
-        apply_visitor ( visitor );
-        return std::move ( visitor.value );
+        return apply_visitor ( visitor );
+    }
+
+    template< typename Type >
+    bool is () const {
+        if (std::is_same<Type, void>{} || std::is_same<Type, std::nullptr_t>{})
+            return type == manager::nulltype();
+        typename visitors::template is_type<Type> visitor;
+        return apply_visitor ( visitor );
     }
 
 private:
@@ -341,6 +553,48 @@ private:
     }
 
 };
+}
+
+template< typename Type, typename... OtherTypes >
+inline bool operator== ( const Type& x, const non_std::basic_variant<OtherTypes...>& y ) {
+    typename non_std::basic_variant<OtherTypes...>::visitors::template eq2<Type> visitor{&x,0};
+    y.apply_visitor ( visitor );
+    return visitor.value;
+}
+
+template< typename Type, typename... OtherTypes >
+inline bool operator!= ( const Type& x, const non_std::basic_variant<OtherTypes...>& y ) {
+    typename non_std::basic_variant<OtherTypes...>::visitors::template ne2<Type> visitor{&x,0};
+    y.apply_visitor ( visitor );
+    return visitor.value;
+}
+
+template< typename Type, typename... OtherTypes >
+inline bool operator< ( const Type& x, const non_std::basic_variant<OtherTypes...>& y ) {
+    typename non_std::basic_variant<OtherTypes...>::visitors::template lt2<Type> visitor{&x,0};
+    y.apply_visitor ( visitor );
+    return visitor.value;
+}
+
+template< typename Type, typename... OtherTypes >
+inline bool operator> ( const Type& x, const non_std::basic_variant<OtherTypes...>& y ) {
+    typename non_std::basic_variant<OtherTypes...>::visitors::template gt2<Type> visitor{&x,0};
+    y.apply_visitor ( visitor );
+    return visitor.value;
+}
+
+template< typename Type, typename... OtherTypes >
+inline bool operator<= ( const Type& x, const non_std::basic_variant<OtherTypes...>& y ) {
+    typename non_std::basic_variant<OtherTypes...>::visitors::template le2<Type> visitor{&x,0};
+    y.apply_visitor ( visitor );
+    return visitor.value;
+}
+
+template< typename Type, typename... OtherTypes >
+inline bool operator>= ( const Type& x, const non_std::basic_variant<OtherTypes...>& y ) {
+    typename non_std::basic_variant<OtherTypes...>::visitors::template ge2<Type> visitor{&x,0};
+    y.apply_visitor ( visitor );
+    return visitor.value;
 }
 
 #endif // NON_STD_BASIC_VARIANT
