@@ -396,7 +396,7 @@ public:
     }
 
     template< typename... OtherTypes >
-    bool operator== ( const basic_variant<OtherTypes...>& other ) {
+    bool operator== ( const basic_variant<OtherTypes...>& other ) const {
         if (&other != static_cast<void*>(this)) {
             typename visitors::template eq<basic_variant<OtherTypes...>> visitor{&other,0};
             apply_visitor ( visitor );
@@ -406,14 +406,14 @@ public:
     }
 
     template< typename Type >
-    bool operator== ( const Type& other ) {
+    bool operator== ( const Type& other ) const {
         typename visitors::template eq<Type> visitor{&other,0};
         apply_visitor ( visitor );
         return visitor.value;
     }
 
     template< typename... OtherTypes >
-    bool operator!= ( const basic_variant<OtherTypes...>& other ) {
+    bool operator!= ( const basic_variant<OtherTypes...>& other ) const {
         if (&other != static_cast<void*>(this)) {
             typename visitors::template ne<basic_variant<OtherTypes...>> visitor{&other,0};
             apply_visitor ( visitor );
@@ -423,14 +423,14 @@ public:
     }
 
     template< typename Type >
-    bool operator!= ( const Type& other ) {
+    bool operator!= ( const Type& other ) const {
         typename visitors::template ne<Type> visitor{&other,0};
         apply_visitor ( visitor );
         return visitor.value;
     }
 
     template< typename... OtherTypes >
-    bool operator< ( const basic_variant<OtherTypes...>& other ) {
+    bool operator< ( const basic_variant<OtherTypes...>& other ) const {
         if (&other != static_cast<void*>(this)) {
             typename visitors::template lt<basic_variant<OtherTypes...>> visitor{&other,0};
             apply_visitor ( visitor );
@@ -440,14 +440,14 @@ public:
     }
 
     template< typename Type >
-    bool operator< ( const Type& other ) {
+    bool operator< ( const Type& other ) const {
         typename visitors::template lt<Type> visitor{&other,0};
         apply_visitor ( visitor );
         return visitor.value;
     }
 
     template< typename... OtherTypes >
-    bool operator> ( const basic_variant<OtherTypes...>& other ) {
+    bool operator> ( const basic_variant<OtherTypes...>& other ) const {
         if (&other != static_cast<void*>(this)) {
             typename visitors::template gt<basic_variant<OtherTypes...>> visitor{&other,0};
             apply_visitor ( visitor );
@@ -457,14 +457,14 @@ public:
     }
 
     template< typename Type >
-    bool operator> ( const Type& other ) {
+    bool operator> ( const Type& other ) const {
         typename visitors::template gt<Type> visitor{&other,0};
         apply_visitor ( visitor );
         return visitor.value;
     }
 
     template< typename... OtherTypes >
-    bool operator<= ( const basic_variant<OtherTypes...>& other ) {
+    bool operator<= ( const basic_variant<OtherTypes...>& other ) const {
         if (&other != static_cast<void*>(this)) {
             typename visitors::template le<basic_variant<OtherTypes...>> visitor{&other,0};
             apply_visitor ( visitor );
@@ -474,14 +474,14 @@ public:
     }
 
     template< typename Type >
-    bool operator<= ( const Type& other ) {
+    bool operator<= ( const Type& other ) const {
         typename visitors::template le<Type> visitor{&other,0};
         apply_visitor ( visitor );
         return visitor.value;
     }
 
     template< typename... OtherTypes >
-    bool operator>= ( const basic_variant<OtherTypes...>& other ) {
+    bool operator>= ( const basic_variant<OtherTypes...>& other ) const {
         if (&other != static_cast<void*>(this)) {
             typename visitors::template ge<basic_variant<OtherTypes...>> visitor{&other,0};
             apply_visitor ( visitor );
@@ -491,7 +491,7 @@ public:
     }
 
     template< typename Type >
-    bool operator>= ( const Type& other ) {
+    bool operator>= ( const Type& other ) const {
         typename visitors::template ge<Type> visitor{&other,0};
         apply_visitor ( visitor );
         return visitor.value;
