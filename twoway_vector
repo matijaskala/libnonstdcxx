@@ -1,6 +1,6 @@
 /*
  * High-performance replacement for std::vector
- * Copyright (C) 2018-2021 Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2018-2022 Matija Skala <mskala@gmx.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,12 +149,12 @@ public:
         }
     }
 
-    template <typename List>
+    template <typename List, typename = decltype(std::cbegin(std::declval<List>())), typename = decltype(std::cend(std::declval<List>()))>
     bool operator==(const List& list) const {
         return std::equal(cbegin(), cend(), std::cbegin(list), std::cend(list));
     }
 
-    template <typename List>
+    template <typename List, typename = decltype(std::cbegin(std::declval<List>())), typename = decltype(std::cend(std::declval<List>()))>
     bool operator!=(const List& list) const {
         return !(*this == list);
     }
@@ -249,12 +249,12 @@ public:
         }
     }
 
-    template <typename List>
+    template <typename List, typename = decltype(ubegin(std::declval<List>())), typename = decltype(uend(std::declval<List>()))>
     void append(List&& list) {
         insert(end(), ubegin(std::forward<List>(list)), uend(std::forward<List>(list)));
     }
 
-    template <typename List>
+    template <typename List, typename = decltype(ubegin(std::declval<List>())), typename = decltype(uend(std::declval<List>()))>
     void prepend(List&& list) {
         insert(begin(), ubegin(std::forward<List>(list)), uend(std::forward<List>(list)));
     }
