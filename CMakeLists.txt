@@ -22,11 +22,13 @@ set(LIBNONSTDCXX_TARGETS char32 nonstdc++)
 set(LIBNONSTDCXX_HEADERS
     char32.h
 
+    connect
     directory
     dl
     ituple
     lexical_cast
     nullref
+    object
     signal
     traits
     type_array
