@@ -29,18 +29,18 @@
 using namespace std;
 
 class bad_symbol : public exception {
-    string _M_msg;
+    string M_msg;
 public:
     bad_symbol ( const string& symbol, size_t pos );
     virtual const char* what() const noexcept override {
-        return _M_msg.c_str();
+        return M_msg.c_str();
     }
 };
 
 static constexpr auto npos = string::npos;
 
 bad_symbol::bad_symbol ( const string& symbol, size_t pos = npos )
-    : _M_msg{"unexpected character"s + (pos == npos ? " "s : " '"s + symbol[pos] + "' "s)
+    : M_msg{"unexpected character"s + (pos == npos ? " "s : " '"s + symbol[pos] + "' "s)
     + "in symbol '"s + symbol + "'"s + (pos == npos ? ""s : ":"s + to_string(pos))} {}
 
 string non_std::demangle ( const char* symbol ) {

@@ -36,27 +36,27 @@ public:
 };
 }
 
-template < typename _Tp1, typename _Tp2 > using __both_strings = std::integral_constant<bool,non_std::is_string<_Tp1>::value && non_std::is_string<_Tp2>::value>;
+template < typename Tp1, typename Tp2 > using _both_strings = std::integral_constant<bool,non_std::is_string<Tp1>::value && non_std::is_string<Tp2>::value>;
 
-template < typename _Res, typename _Arg >
-inline typename std::enable_if<!__both_strings<_Res,_Arg>::value,_Res>::type lexical_cast ( const _Arg& s ) noexcept(false) {
+template < typename Res, typename Arg >
+inline typename std::enable_if<!_both_strings<Res,Arg>::value,Res>::type lexical_cast ( const Arg& s ) noexcept(false) {
     std::stringstream stream;
-    _Res r;
+    Res r;
     if ( !( stream << s ) || !( stream >> r ) || stream.rdbuf()->in_avail() )
         throw non_std::bad_lexical_cast();
     return r;
 }
 
-template < typename _Res, typename _Arg >
-inline typename std::enable_if<__both_strings<_Res,_Arg>::value,_Res>::type lexical_cast ( const _Arg& s ) noexcept(false) {
-    _Res _1str;
+template < typename Res, typename Arg >
+inline typename std::enable_if<_both_strings<Res,Arg>::value,Res>::type lexical_cast ( const Arg& s ) noexcept(false) {
+    Res _1str;
     {
         std::locale l;
-        using cvt_t = std::codecvt< typename _Res::value_type, typename _Arg::value_type, mbstate_t >;
+        using cvt_t = std::codecvt< typename Res::value_type, typename Arg::value_type, mbstate_t >;
         const cvt_t& cvt = std::use_facet< cvt_t > ( l );
-        typename _Res::value_type* pwc;
-        const typename _Arg::value_type* pc;
-        auto dest = new typename _Res::value_type[s.length() + 1];
+        typename Res::value_type* pwc;
+        const typename Arg::value_type* pc;
+        auto dest = new typename Res::value_type[s.length() + 1];
         auto state = mbstate_t{};
         switch ( cvt.in(state, s.c_str(), s.c_str() + s.length() + 1, pc, dest, dest + s.length() + 1, pwc) )
         {

@@ -18,19 +18,19 @@
 
 #include "unicode/utf16.h"
 
-void _c32toc8 ( uint_least32_t __c, char* c8 ) {
+void _c32toc8 ( uint_least32_t c, char* c8 ) {
     if (!c8)
         return;
-    if (__c < 0x80) {
-        c8[0] = __c;
+    if (c < 0x80) {
+        c8[0] = c;
         c8[1] = '\0';
         return;
     }
     static uint_least16_t lead = 0;
-    if (U16_IS_LEAD(__c))
-        lead = __c;
-    if (U16_IS_TRAIL(__c)) {
-        __c = U16_GET_SUPPLEMENTARY(lead, __c);
+    if (U16_IS_LEAD(c))
+        lead = c;
+    if (U16_IS_TRAIL(c)) {
+        c = U16_GET_SUPPLEMENTARY(lead, c);
         lead = 0;
     }
     if (lead) {
@@ -38,20 +38,20 @@ void _c32toc8 ( uint_least32_t __c, char* c8 ) {
         return;
     }
     int len;
-    if (__c < 0x800)
+    if (c < 0x800)
         len = 2;
-    else if (__c < 0x10000)
+    else if (c < 0x10000)
         len = 3;
-    else if (__c < 0x200000)
+    else if (c < 0x200000)
         len = 4;
-    else if (__c < 0x4000000)
+    else if (c < 0x4000000)
         len = 5;
     else
         len = 6;
     c8[len] = 0;
     for (int i = len - 1; i >= 0; i--) {
-        c8[i] = 0x80 | (__c & 0x3f);
-        __c >>= 6;
+        c8[i] = 0x80 | (c & 0x3f);
+        c >>= 6;
     }
     c8[0] |= 0xff << (8 - len);
 }

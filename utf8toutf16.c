@@ -22,45 +22,45 @@
 #include "unicode/utf8.h"
 #include "unicode/utf16.h"
 
-uint8_t _c8len ( char __c );
-uint_least16_t* utf8_to_utf16 ( const char* __src, uint_least16_t* __dst, size_t __len ) {
-    if (!__len)
-        __len = utf8_strlen(__src);
-    bool alloc = !__dst;
+uint8_t _c8len ( char _c );
+uint_least16_t* utf8_to_utf16 ( const char* src, uint_least16_t* dst, size_t len ) {
+    if (!len)
+        len = utf8_strlen(src);
+    bool alloc = !dst;
     if (alloc)
-        __dst = malloc(__len * 4 + 2);
-    for (size_t i = 0; i < __len; i++) {
-        if (U8_IS_SINGLE(*__src)) {
-            __dst[i] = *(__src++);
+        dst = malloc(len * 4 + 2);
+    for (size_t i = 0; i < len; i++) {
+        if (U8_IS_SINGLE(*src)) {
+            dst[i] = *(src++);
             continue;
         }
-        uint8_t len = _c8len(*__src);
+        uint8_t len = _c8len(*src);
         if (len == 1) {
             if (alloc)
-                free(__dst);
+                free(dst);
             return NULL;
         }
-        uint_least32_t __c = *__src & (0xfe >> len);
+        uint_least32_t _c = *src & (0xfe >> len);
         for (int j = 1; j < len; j++) {
-            int c = __src[j];
+            int c = src[j];
             if (!U8_IS_TRAIL(c)) {
                 if (alloc)
-                    free(__dst);
+                    free(dst);
                 return NULL;
             }
-            __c <<= 6;
-            __c |= (c & 0x3f);
+            _c <<= 6;
+            _c |= (c & 0x3f);
         }
-        __src += len;
-        if (U16_LENGTH(__c) == 2) {
-            __dst[++i] = U16_LEAD(__c);
-            __c = U16_TRAIL(__c);
-            __len++;
+        src += len;
+        if (U16_LENGTH(_c) == 2) {
+            dst[++i] = U16_LEAD(_c);
+            _c = U16_TRAIL(_c);
+            len++;
         }
-        __dst[i] = __c;
+        dst[i] = _c;
     }
-    __dst[__len] = 0;
+    dst[len] = 0;
     if (alloc)
-        __dst = realloc(__dst, __len * 2 + 2);
-    return __dst;
+        dst = realloc(dst, len * 2 + 2);
+    return dst;
 }

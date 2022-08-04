@@ -18,11 +18,11 @@
 
 #include "unicode/utf8.h"
 
-uint8_t _c8len ( char __c ) {
-    if (!U8_IS_LEAD(__c))
+uint8_t _c8len ( char c ) {
+    if (!U8_IS_LEAD(c))
         return 1;
     uint8_t len = 1;
-    while (__c >= 0xff << (7 - len))
+    while (c >= 0xff << (7 - len))
         len++;
     return len;
 }

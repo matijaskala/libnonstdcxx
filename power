@@ -24,33 +24,33 @@
 
 namespace non_std {
 
-template <typename _Tp>
-constexpr auto inverse_element(std::plus<_Tp>) -> std::negate<_Tp> { return {}; }
+template <typename Tp>
+constexpr auto inverse_element(std::plus<Tp>) -> std::negate<Tp> { return {}; }
 
-template <typename _Tp>
-constexpr _Tp identity_element(std::plus<_Tp>) { return _Tp(0); }
+template <typename Tp>
+constexpr Tp identity_element(std::plus<Tp>) { return Tp(0); }
 
-template <typename _Tp>
-constexpr auto inverse_element(std::multiplies<_Tp>) -> _Tp(*)(const _Tp&) { return [] (const _Tp& __x) { return 1/__x; }; }
+template <typename Tp>
+constexpr auto inverse_element(std::multiplies<Tp>) -> Tp(*)(const Tp&) { return [] (const Tp& x) { return 1/x; }; }
 
-template <typename _Tp>
-constexpr _Tp identity_element(std::multiplies<_Tp>) { return _Tp(1); }
+template <typename Tp>
+constexpr Tp identity_element(std::multiplies<Tp>) { return Tp(1); }
 
-template <typename _Tp, typename _Int, typename _Op = std::multiplies<_Tp>>
-constexpr _Tp power(_Tp __x, _Int __n, _Op __op = {}) {
-    switch (__n) {
+template <typename Tp, typename _Int, typename _Op = std::multiplies<Tp>>
+constexpr Tp power(Tp x, _Int n, _Op op = {}) {
+    switch (n) {
         case 0:
-            return identity_element(__op);
+            return identity_element(op);
         case 1:
-            return __x;
+            return x;
         case 2:
-            return __op(__x, __x);
+            return op(x, x);
     }
-    if (__n < 0)
-        return power(inverse_element(__op)(__x), -__n, __op);
-    if (__n % 2)
-        return __op(power(power(__x, __n/2, __op), 2, __op), __x);
-    return power(power(__x, __n/2, __op), 2, __op);
+    if (n < 0)
+        return power(inverse_element(op)(x), -n, op);
+    if (n % 2)
+        return op(power(power(x, n/2, op), 2, op), x);
+    return power(power(x, n/2, op), 2, op);
 }
 }
 

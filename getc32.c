@@ -19,9 +19,9 @@
 #include "char32.h"
 #include "unicode/utf8.h"
 
-uint8_t _c8len ( char __c );
+uint8_t _c8len ( char c );
 uint_least32_t getc32 ( FILE* stream ) {
-    uint_least32_t __c;
+    uint_least32_t _c;
     uint8_t len;
     {
         int c = getc(stream);
@@ -32,14 +32,14 @@ uint_least32_t getc32 ( FILE* stream ) {
         len = _c8len(c);
         if (len == 1)
             return -1;
-        __c = c & (0xfe >> len);
+        _c = c & (0xfe >> len);
     }
     for (int i = 1; i < len; i++) {
         int c = getc(stream);
         if (!U8_IS_TRAIL(c))
             return -1;
-        __c <<= 6;
-        __c |= (c & 0x3f);
+        _c <<= 6;
+        _c |= (c & 0x3f);
     }
-    return __c;
+    return _c;
 }

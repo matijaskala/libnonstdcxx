@@ -19,11 +19,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-uint8_t _c8len ( char __c );
-size_t utf8_strlen ( const char* __s ) {
+uint8_t _c8len ( char c );
+size_t utf8_strlen ( const char* s ) {
     size_t len = 0;
-    while (*__s) {
-        __s += _c8len(*__s);
+    while (*s) {
+        s += _c8len(*s);
         len++;
     }
     return len;

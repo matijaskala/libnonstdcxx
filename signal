@@ -64,8 +64,8 @@ public:
     template<typename... Args2>
     void operator() ( Args2&&... args ) { m_func ( std::forward<Args2> ( args )... ); }
 
-    template< typename _Data = void >
-    _Data* data() { return static_cast<_Data*> ( m_data ); }
+    template< typename Data = void >
+    Data* data() { return static_cast<Data*> ( m_data ); }
 };
 
 template< typename... Args >

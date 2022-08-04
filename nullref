@@ -21,8 +21,8 @@
 #define NON_STD_NULLREF
 
 static struct {
-    template <typename _Tp>
-    operator _Tp&() { using ptr = _Tp*; return *ptr{0}; }
+    template <typename Tp>
+    operator Tp&() { using ptr = Tp*; return *ptr{0}; }
 } nullref;
 
 #endif // NON_STD_NULLREF

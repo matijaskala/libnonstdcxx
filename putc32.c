@@ -18,12 +18,12 @@
 
 #include "char32.h"
 
-void _c32toc8 ( uint_least32_t __c, char* c8 );
-uint_least32_t putc32 ( uint_least32_t __c, FILE* stream ) {
+void _c32toc8 ( uint_least32_t c, char* c8 );
+uint_least32_t putc32 ( uint_least32_t c, FILE* stream ) {
     char c8[7];
-    _c32toc8(__c, c8);
+    _c32toc8(c, c8);
     for (int i = 0; c8[i]; i++)
         if (putc(c8[i], stream) == EOF)
             return -1;
-    return __c;
+    return c;
 }

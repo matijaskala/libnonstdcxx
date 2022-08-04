@@ -41,20 +41,20 @@ enum color {
 namespace xterm
 {
 
-std::string escape [[gnu::visibility("default")]] ( const std::string& __s );
+std::string escape [[gnu::visibility("default")]] ( const std::string& s );
 
-template<typename _CharT, typename _Traits>
-  inline std::basic_ostream<_CharT, _Traits>&
-  bold(std::basic_ostream<_CharT, _Traits>& __os)
-  { return __os << escape("1m"); }
+template<typename CharT, typename Traits>
+  inline std::basic_ostream<CharT, Traits>&
+  bold(std::basic_ostream<CharT, Traits>& os)
+  { return os << escape("1m"); }
 
-std::string bgcolor [[gnu::visibility("default")]] ( color __c );
-std::string fgcolor [[gnu::visibility("default")]] ( color __c );
+std::string bgcolor [[gnu::visibility("default")]] ( color c );
+std::string fgcolor [[gnu::visibility("default")]] ( color c );
 
-template<typename _CharT, typename _Traits>
-  inline std::basic_ostream<_CharT, _Traits>&
-  reset(std::basic_ostream<_CharT, _Traits>& __os)
-  { return __os << escape("m"); }
+template<typename CharT, typename Traits>
+  inline std::basic_ostream<CharT, Traits>&
+  reset(std::basic_ostream<CharT, Traits>& os)
+  { return os << escape("m"); }
 }
 
 }

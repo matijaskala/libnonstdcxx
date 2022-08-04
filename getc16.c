@@ -21,10 +21,10 @@
 
 uint_least16_t getc16 ( FILE* stream ) {
     static uint_least16_t trail = 0;
-    uint_least32_t __c = trail ? trail : getc32(stream);
-    if (U16_LENGTH(__c) == 2) {
-        trail = U16_TRAIL(__c);
-        __c = U16_LEAD(__c);
+    uint_least32_t c = trail ? trail : getc32(stream);
+    if (U16_LENGTH(c) == 2) {
+        trail = U16_TRAIL(c);
+        c = U16_LEAD(c);
     }
-    return __c;
+    return c;
 }

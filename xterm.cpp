@@ -22,15 +22,15 @@
 
 using namespace non_std;
 
-std::string xterm::escape ( const std::string& __s ) {
+std::string xterm::escape ( const std::string& s ) {
     static char* TERM = getenv ( "TERM" );
-    return TERM ? "[" + __s : "";
+    return TERM ? "[" + s : "";
 }
 
-std::string xterm::bgcolor ( color __c ) {
-    return escape ( "4" + std::to_string ( __c ) + "m" );
+std::string xterm::bgcolor ( color c ) {
+    return escape ( "4" + std::to_string ( c ) + "m" );
 }
 
-std::string xterm::fgcolor ( color __c ) {
-    return escape ( "3" + std::to_string ( __c ) + "m" );
+std::string xterm::fgcolor ( color c ) {
+    return escape ( "3" + std::to_string ( c ) + "m" );
 }

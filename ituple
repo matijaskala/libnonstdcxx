@@ -26,255 +26,255 @@ namespace non_std
 {
 
 template <typename...>
-struct _AllEq;
+struct AllEq_;
 
-template <typename _FirstArg, typename... _OtherArgs>
-struct _AllEq<_FirstArg,_OtherArgs...> {
-    bool operator() ( _FirstArg&& __first, _OtherArgs&&... __args ) {
-        for ( bool ne: { (__first != __args)... } )
+template <typename FirstArg, typename... OtherArgs>
+struct AllEq_<FirstArg,OtherArgs...> {
+    bool operator() ( FirstArg&& first, OtherArgs&&... args ) {
+        for ( bool ne: { (first != args)... } )
             if ( ne ) return false;
         return true;
     }
 };
 
-template <typename _OnlyOneArg>
-struct _AllEq<_OnlyOneArg> {
-    bool operator() ( _OnlyOneArg&& ) { return true; }
+template <typename OnlyOneArg>
+struct AllEq_<OnlyOneArg> {
+    bool operator() ( OnlyOneArg&& ) { return true; }
 };
 
 template <>
-struct _AllEq<> {
+struct AllEq_<> {
     bool operator() () { return true; }
 };
 
-template <typename... _Args>
-bool all_eq ( _Args... __args ) { return _AllEq<_Args...>() ( std::forward<_Args>(__args)... ); }
+template <typename... Args>
+bool all_eq ( Args... args ) { return AllEq_<Args...>() ( std::forward<Args>(args)... ); }
 
 template <template <typename...> class, typename...>
-struct _ITupleHelper;
+struct ITupleHelper_;
 
-template <template <typename...> class _Tp>
-struct _ITupleHelper<_Tp> {
+template <template <typename...> class Tp>
+struct ITupleHelper_<Tp> {
     template <bool...>
-    struct _IteratorHelper {
-        template <typename... _Args>
-        struct _Iterator {
-            using type = _Tp<_Args...>;
+    struct IteratorHelper {
+        template <typename... Args>
+        struct Iterator {
+            using type = Tp<Args...>;
         };
     };
 };
 
-template <template <typename...> class _Tp, typename _Type>
-struct _ITupleHelper<_Tp,_Type> {
-    template <bool _Const>
-    struct _IteratorHelper {
-        template <typename... _Args>
-        struct _Iterator {
-            using _FirstT = typename std::remove_reference<_Type>::type;
-            using type = _Tp<_Args..., typename std::conditional<_Const || std::is_const<_FirstT>{},
-                         typename _FirstT::const_iterator, typename _FirstT::iterator>::type>;
+template <template <typename...> class Tp, typename Type>
+struct ITupleHelper_<Tp,Type> {
+    template <bool Const>
+    struct IteratorHelper {
+        template <typename... Args>
+        struct Iterator {
+            using FirstT = typename std::remove_reference<Type>::type;
+            using type = Tp<Args..., typename std::conditional<Const || std::is_const<FirstT>{},
+                         typename FirstT::const_iterator, typename FirstT::iterator>::type>;
         };
     };
 };
 
-template <template <typename...> class _Tp, typename _FirstType, typename... _OtherTypes>
-struct _ITupleHelper<_Tp,_FirstType,_OtherTypes...> {
-    template <bool _FirstConst, bool... _OtherConst>
-    struct _IteratorHelper {
-        template <typename... _Args>
-        struct _Iterator {
-            using _FirstT = typename std::remove_reference<_FirstType>::type;
-            using type = typename _ITupleHelper<_Tp, _OtherTypes...>::template _IteratorHelper<_OtherConst...>
-                       ::template _Iterator<_Args..., typename std::conditional<_FirstConst || std::is_const<_FirstT>{},
-                         typename _FirstT::const_iterator, typename _FirstT::iterator>::type>::type;
+template <template <typename...> class Tp, typename FirstType, typename... OtherTypes>
+struct ITupleHelper_<Tp,FirstType,OtherTypes...> {
+    template <bool FirstConst, bool... OtherConst>
+    struct IteratorHelper {
+        template <typename... Args>
+        struct Iterator {
+            using FirstT = typename std::remove_reference<FirstType>::type;
+            using type = typename ITupleHelper_<Tp, OtherTypes...>::template IteratorHelper<OtherConst...>
+                       ::template Iterator<Args..., typename std::conditional<FirstConst || std::is_const<FirstT>{},
+                         typename FirstT::const_iterator, typename FirstT::iterator>::type>::type;
         };
     };
 };
 
 template <typename...>
-struct _TupleToRange;
+struct TupleToRange_;
 
 template <>
-struct _TupleToRange<> {
-    static constexpr std::size_t _MaxIndex = -1;
-    template <template <std::size_t...> class _Tp>
-    using pass = _Tp<>;
+struct TupleToRange_<> {
+    static constexpr std::size_t MaxIndex = -1;
+    template <template <std::size_t...> class Tp>
+    using pass = Tp<>;
 };
 
-template <typename _FirstType, typename... _OtherTypes>
-struct _TupleToRange<_FirstType,_OtherTypes...> {
-    static constexpr std::size_t _MaxIndex = _TupleToRange<_OtherTypes...>::_MaxIndex + 1;
-    template <template <std::size_t...> class _Tp>
-    struct _PassHelper {
-        template <std::size_t... __a>
-        using _T = _Tp<__a..., _MaxIndex>;
-        using type = typename _TupleToRange<_OtherTypes...>::template pass<_T>;
+template <typename FirstType, typename... OtherTypes>
+struct TupleToRange_<FirstType,OtherTypes...> {
+    static constexpr std::size_t MaxIndex = TupleToRange_<OtherTypes...>::MaxIndex + 1;
+    template <template <std::size_t...> class Tp>
+    struct PassHelper {
+        template <std::size_t... a>
+        using T = Tp<a..., MaxIndex>;
+        using type = typename TupleToRange_<OtherTypes...>::template pass<T>;
     };
-    template <template <std::size_t...> class _Tp>
-    using pass = typename _PassHelper<_Tp>::type;
+    template <template <std::size_t...> class Tp>
+    using pass = typename PassHelper<Tp>::type;
 };
 
-template <std::size_t... _Values>
-struct _PassHelperFunc {
-    template <typename _Callable, typename _Tuple>
-    static auto pass ( _Callable&& __callable, _Tuple&& __tuple )
-   -> decltype(__callable(std::get<_Values>(std::forward<_Tuple>(__tuple))...)) { // GCC 4.8.2 needs this
-        return __callable(std::get<_Values>(std::forward<_Tuple>(__tuple))...);
+template <std::size_t... Values>
+struct PassHelperFunc_ {
+    template <typename Callable, typename Tuple>
+    static auto pass ( Callable&& callable, Tuple&& tuple )
+   -> decltype(callable(std::get<Values>(std::forward<Tuple>(tuple))...)) { // GCC 4.8.2 needs this
+        return callable(std::get<Values>(std::forward<Tuple>(tuple))...);
     }
 };
-template <typename... _Types>
-using _PassHelperWrapper = typename _TupleToRange<_Types...>::template pass<_PassHelperFunc>;
+template <typename... Types>
+using PassHelperWrapper_ = typename TupleToRange_<Types...>::template pass<PassHelperFunc_>;
 
-namespace _ITupleIteratorLambdas {
-    template <template <typename...> class _Tp>
-    struct __func0 {
-        template <typename... _Args>
-        auto operator() ( _Args... __args ) -> _Tp<decltype(*__args)...> { return _Tp<decltype(*__args)...>{*__args...}; }
+namespace ITupleIterator_Lambdas {
+    template <template <typename...> class Tp>
+    struct func0 {
+        template <typename... Args>
+        auto operator() ( Args... args ) -> Tp<decltype(*args)...> { return Tp<decltype(*args)...>{*args...}; }
     };
-    struct __func1 {
-        template <typename... _Args>
-        void operator() ( _Args&... __args ) { for ( std::nullptr_t i: { (++__args, nullptr)... } ) (void)i; }
+    struct func1 {
+        template <typename... Args>
+        void operator() ( Args&... args ) { for ( std::nullptr_t i: { (++args, nullptr)... } ) (void)i; }
     };
-    struct __func2 {
-        template <typename... _Args>
-        void operator() ( _Args&... __args ) { for ( std::nullptr_t i: { (__args++, nullptr)... } ) (void)i; }
+    struct func2 {
+        template <typename... Args>
+        void operator() ( Args&... args ) { for ( std::nullptr_t i: { (args++, nullptr)... } ) (void)i; }
     };
-    struct __func3 {
-        template <typename... _Args>
-        void operator() ( _Args&... __args ) { for ( std::nullptr_t i: { (--__args, nullptr)... } ) (void)i; }
+    struct func3 {
+        template <typename... Args>
+        void operator() ( Args&... args ) { for ( std::nullptr_t i: { (--args, nullptr)... } ) (void)i; }
     };
-    struct __func4 {
-        template <typename... _Args>
-        void operator() ( _Args&... __args ) { for ( std::nullptr_t i: { (__args--, nullptr)... } ) (void)i; }
+    struct func4 {
+        template <typename... Args>
+        void operator() ( Args&... args ) { for ( std::nullptr_t i: { (args--, nullptr)... } ) (void)i; }
     };
 }
-template <typename _IterType, template <typename...> class _Tp, typename... _Types>
-struct _ITupleIterator : _IterType {
-    using _IterType::_IterType;
-    template <typename _Callable>
-    auto pass ( _Callable&& __callable ) {
-        return _PassHelperWrapper<_Types...>::pass(std::forward<_Callable>(__callable), *this);
+template <typename IterType, template <typename...> class Tp, typename... Types>
+struct ITupleIterator_ : IterType {
+    using IterType::IterType;
+    template <typename Callable>
+    auto pass ( Callable&& callable ) {
+        return PassHelperWrapper_<Types...>::pass(std::forward<Callable>(callable), *this);
     }
     auto operator* () {
-        return pass ( _ITupleIteratorLambdas::__func0<_Tp>{} );
+        return pass ( ITupleIterator_Lambdas::func0<Tp>{} );
     }
-    _ITupleIterator& operator++ () {
-        pass ( _ITupleIteratorLambdas::__func1{} );
+    ITupleIterator_& operator++ () {
+        pass ( ITupleIterator_Lambdas::func1{} );
         return *this;
     }
-    _ITupleIterator operator++ (int) {
-        _ITupleIterator ret = *this;
-        pass ( _ITupleIteratorLambdas::__func2{} );
+    ITupleIterator_ operator++ (int) {
+        ITupleIterator_ ret = *this;
+        pass ( ITupleIterator_Lambdas::func2{} );
         return ret;
     }
-    _ITupleIterator& operator-- () {
-        pass ( _ITupleIteratorLambdas::__func3{} );
+    ITupleIterator_& operator-- () {
+        pass ( ITupleIterator_Lambdas::func3{} );
         return *this;
     }
-    _ITupleIterator operator-- (int) {
-        _ITupleIterator ret = *this;
-        pass ( _ITupleIteratorLambdas::__func4{} );
+    ITupleIterator_ operator-- (int) {
+        ITupleIterator_ ret = *this;
+        pass ( ITupleIterator_Lambdas::func4{} );
         return ret;
     }
 };
 
-namespace _ITupleLambdas {
+namespace _ituple_lambdas {
     template <typename...>
-    struct _FirstArg;
-    template <typename _First, typename... _Other>
-    struct _FirstArg<_First,_Other...> {
-        std::size_t operator() ( _First&& a, _Other&&... ) { return a; }
+    struct FirstArg;
+    template <typename First, typename... Other>
+    struct FirstArg<First,Other...> {
+        std::size_t operator() ( First&& a, Other&&... ) { return a; }
     };
     template <>
-    struct _FirstArg<> {
+    struct FirstArg<> {
         std::size_t operator()() { return 0; }
     };
-    template <typename... _Args>
-    std::size_t _first_arg ( _Args&&... __args ) { return _FirstArg<_Args...>{} ( std::forward<_Args>(__args)... ); }
-    struct __size_get {
-        template <typename... _Args>
-        std::size_t operator() ( _Args&... __args ) { return _first_arg(__args.size()...); }
+    template <typename... Args>
+    std::size_t _first_arg ( Args&&... args ) { return FirstArg<Args...>{} ( std::forward<Args>(args)... ); }
+    struct size_get {
+        template <typename... Args>
+        std::size_t operator() ( Args&... args ) { return _first_arg(args.size()...); }
     };
-    struct __size_all_eq {
-        template <typename... _Args>
-        bool operator() ( _Args&... __args ) { return all_eq(__args.size()...); }
+    struct size_all_eq {
+        template <typename... Args>
+        bool operator() ( Args&... args ) { return all_eq(args.size()...); }
     };
-    template <typename _TupleIterator>
-    struct __begin {
-        template <typename... _Args>
-        _TupleIterator operator() ( _Args&... __args ) { return _TupleIterator{__args.begin()...}; }
+    template <typename TupleIterator>
+    struct begin {
+        template <typename... Args>
+        TupleIterator operator() ( Args&... args ) { return TupleIterator{args.begin()...}; }
     };
-    template <typename _TupleIterator>
-    struct __end {
-        template <typename... _Args>
-        _TupleIterator operator() ( _Args&... __args ) { return _TupleIterator{__args.end()...}; }
+    template <typename TupleIterator>
+    struct end {
+        template <typename... Args>
+        TupleIterator operator() ( Args&... args ) { return TupleIterator{args.end()...}; }
     };
-    template <typename _TupleIterator>
-    struct __rbegin {
-        template <typename... _Args>
-        std::reverse_iterator<_TupleIterator> operator() ( _Args&... __args ) {
-            return std::reverse_iterator<_TupleIterator>{_TupleIterator{__args.rbegin().base()...}};
+    template <typename TupleIterator>
+    struct rbegin {
+        template <typename... Args>
+        std::reverse_iterator<TupleIterator> operator() ( Args&... args ) {
+            return std::reverse_iterator<TupleIterator>{TupleIterator{args.rbegin().base()...}};
         }
     };
-    template <typename _TupleIterator>
-    struct __rend {
-        template <typename... _Args>
-        std::reverse_iterator<_TupleIterator> operator() ( _Args&... __args ) {
-            return std::reverse_iterator<_TupleIterator>{_TupleIterator{__args.rend().base()...}};
+    template <typename TupleIterator>
+    struct rend {
+        template <typename... Args>
+        std::reverse_iterator<TupleIterator> operator() ( Args&... args ) {
+            return std::reverse_iterator<TupleIterator>{TupleIterator{args.rend().base()...}};
         }
     };
 }
 
-template <template <typename...> class _Tp, typename... _Types>
+template <template <typename...> class Tp, typename... Types>
 class ituple {
-    template <typename> struct _TemplatedTrue { static constexpr bool value = true; };
-    template <typename> struct _TemplatedFalse { static constexpr bool value = false; };
-    template <typename _Callable>
-    auto pass ( _Callable&& __callable ) const {
-        return _PassHelperWrapper<_Types...>::pass(std::forward<_Callable>(__callable), tuple);
+    template <typename> struct TemplatedTrue { static constexpr bool value = true; };
+    template <typename> struct TemplatedFalse { static constexpr bool value = false; };
+    template <typename Callable>
+    auto pass ( Callable&& callable ) const {
+        return PassHelperWrapper_<Types...>::pass(std::forward<Callable>(callable), tuple);
     }
-    template <bool... _Const>
-    using tuple_iterator = _ITupleIterator<typename _ITupleHelper<_Tp, _Types...>
-                                         ::template _IteratorHelper<_Const...>
-                                         ::template _Iterator<>::type, _Tp, _Types...>;
+    template <bool... Const>
+    using tuple_iterator = ITupleIterator_<typename ITupleHelper_<Tp, Types...>
+                                         ::template IteratorHelper<Const...>
+                                         ::template Iterator<>::type, Tp, Types...>;
 
 public:
-    using iterator = tuple_iterator<_TemplatedFalse<_Types>::value...>;
-    using const_iterator = tuple_iterator<_TemplatedTrue<_Types>::value...>;
+    using iterator = tuple_iterator<TemplatedFalse<Types>::value...>;
+    using const_iterator = tuple_iterator<TemplatedTrue<Types>::value...>;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-    ituple ( _Tp<_Types...>& tuple ) : tuple(tuple) {
-        if ( !pass ( _ITupleLambdas::__size_all_eq{} ) )
+    ituple ( Tp<Types...>& tuple ) : tuple(tuple) {
+        if ( !pass ( _ituple_lambdas::size_all_eq{} ) )
             throw std::invalid_argument{"ituple: non-matching sizes"};
     }
-    std::size_t size() const { return pass ( _ITupleLambdas::__size_get{} ); }
+    std::size_t size() const { return pass ( _ituple_lambdas::size_get{} ); }
 
-    template <std::nullptr_t, bool... _Const>
-    tuple_iterator<_Const...> begin() { return pass ( _ITupleLambdas::__begin<tuple_iterator<_Const...>>{} ); }
-    template <std::nullptr_t, bool... _Const>
-    tuple_iterator<_Const...> end() { return pass ( _ITupleLambdas::__end<tuple_iterator<_Const...>>{} ); }
-    template <std::nullptr_t, bool... _Const>
-    std::reverse_iterator<tuple_iterator<_Const...>> rbegin() { return pass ( _ITupleLambdas::__rbegin<tuple_iterator<_Const...>>{} ); }
-    template <std::nullptr_t, bool... _Const>
-    std::reverse_iterator<tuple_iterator<_Const...>> rend() { return pass ( _ITupleLambdas::__rend<tuple_iterator<_Const...>>{} ); }
+    template <std::nullptr_t, bool... Const>
+    tuple_iterator<Const...> begin() { return pass ( _ituple_lambdas::begin<tuple_iterator<Const...>>{} ); }
+    template <std::nullptr_t, bool... Const>
+    tuple_iterator<Const...> end() { return pass ( _ituple_lambdas::end<tuple_iterator<Const...>>{} ); }
+    template <std::nullptr_t, bool... Const>
+    std::reverse_iterator<tuple_iterator<Const...>> rbegin() { return pass ( _ituple_lambdas::rbegin<tuple_iterator<Const...>>{} ); }
+    template <std::nullptr_t, bool... Const>
+    std::reverse_iterator<tuple_iterator<Const...>> rend() { return pass ( _ituple_lambdas::rend<tuple_iterator<Const...>>{} ); }
 
-    iterator begin() { return begin<nullptr, _TemplatedFalse<_Types>::value...>(); }
-    iterator end() { return end<nullptr, _TemplatedFalse<_Types>::value...>(); }
-    reverse_iterator rbegin() { return rbegin<nullptr, _TemplatedFalse<_Types>::value...>(); }
-    reverse_iterator rend() { return rend<nullptr, _TemplatedFalse<_Types>::value...>(); }
+    iterator begin() { return begin<nullptr, TemplatedFalse<Types>::value...>(); }
+    iterator end() { return end<nullptr, TemplatedFalse<Types>::value...>(); }
+    reverse_iterator rbegin() { return rbegin<nullptr, TemplatedFalse<Types>::value...>(); }
+    reverse_iterator rend() { return rend<nullptr, TemplatedFalse<Types>::value...>(); }
 
     const_iterator begin() const {
-        return const_cast<ituple*>(this)->begin<nullptr, _TemplatedTrue<_Types>::value...>();
+        return const_cast<ituple*>(this)->begin<nullptr, TemplatedTrue<Types>::value...>();
     }
     const_iterator end() const {
-        return const_cast<ituple*>(this)->end<nullptr, _TemplatedTrue<_Types>::value...>();
+        return const_cast<ituple*>(this)->end<nullptr, TemplatedTrue<Types>::value...>();
     }
     const_reverse_iterator rbegin() const {
-        return const_cast<ituple*>(this)->rbegin<nullptr, _TemplatedTrue<_Types>::value...>();
+        return const_cast<ituple*>(this)->rbegin<nullptr, TemplatedTrue<Types>::value...>();
     }
     const_reverse_iterator rend() const {
-        return const_cast<ituple*>(this)->rend<nullptr, _TemplatedTrue<_Types>::value...>();
+        return const_cast<ituple*>(this)->rend<nullptr, TemplatedTrue<Types>::value...>();
     }
 
     const_iterator cbegin() const { return begin(); }
@@ -283,37 +283,37 @@ public:
     const_reverse_iterator crend() const { return rend(); }
 
 private:
-    _Tp<_Types...>& tuple;
+    Tp<Types...>& tuple;
 };
 
-template <template <typename...> class _Tp, typename... _Types>
+template <template <typename...> class Tp, typename... Types>
 class const_ituple {
-    template <typename> struct _TemplatedTrue { static constexpr bool value = true; };
-    template <typename _Callable>
-    auto pass ( _Callable&& __callable ) const {
-        return _PassHelperWrapper<_Types...>::pass(std::forward<_Callable>(__callable), tuple);
+    template <typename> struct TemplatedTrue { static constexpr bool value = true; };
+    template <typename Callable>
+    auto pass ( Callable&& callable ) const {
+        return PassHelperWrapper_<Types...>::pass(std::forward<Callable>(callable), tuple);
     }
-    template <bool... _Const>
-    using tuple_iterator = _ITupleIterator<typename _ITupleHelper<_Tp, _Types...>
-                                         ::template _IteratorHelper<_Const...>
-                                         ::template _Iterator<>::type, _Tp, _Types...>;
+    template <bool... Const>
+    using tuple_iterator = ITupleIterator_<typename ITupleHelper_<Tp, Types...>
+                                         ::template IteratorHelper<Const...>
+                                         ::template Iterator<>::type, Tp, Types...>;
 
 public:
-    using const_iterator = tuple_iterator<_TemplatedTrue<_Types>::value...>;
+    using const_iterator = tuple_iterator<TemplatedTrue<Types>::value...>;
     using iterator = const_iterator;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
     using reverse_iterator = std::reverse_iterator<iterator>;
 
-    const_ituple ( const _Tp<_Types...>& tuple ) : tuple{tuple} {
-        if ( !pass ( _ITupleLambdas::__size_all_eq{} ) )
+    const_ituple ( const Tp<Types...>& tuple ) : tuple{tuple} {
+        if ( !pass ( _ituple_lambdas::size_all_eq{} ) )
             throw std::invalid_argument{"const ituple: non-matching sizes"};
     }
-    std::size_t size() const { return pass ( _ITupleLambdas::__size_get{} ); }
+    std::size_t size() const { return pass ( _ituple_lambdas::size_get{} ); }
 
-    const_iterator cbegin() const { return pass ( _ITupleLambdas::__begin<const_iterator>{} ); }
-    const_iterator cend() const { return pass ( _ITupleLambdas::__end<const_iterator>{} ); }
-    const_reverse_iterator crbegin() const { return pass ( _ITupleLambdas::__rbegin<const_iterator>{} ); }
-    const_reverse_iterator crend() const { return pass ( _ITupleLambdas::__rend<const_iterator>{} ); }
+    const_iterator cbegin() const { return pass ( _ituple_lambdas::begin<const_iterator>{} ); }
+    const_iterator cend() const { return pass ( _ituple_lambdas::end<const_iterator>{} ); }
+    const_reverse_iterator crbegin() const { return pass ( _ituple_lambdas::rbegin<const_iterator>{} ); }
+    const_reverse_iterator crend() const { return pass ( _ituple_lambdas::rend<const_iterator>{} ); }
 
     const_iterator begin() const { return cbegin(); }
     const_iterator end() const { return cend(); }
@@ -321,59 +321,59 @@ public:
     const_reverse_iterator rend() const { return crend(); }
 
 private:
-    const _Tp<_Types...>& tuple;
+    const Tp<Types...>& tuple;
 };
 
-template <template <typename...> class _Tp, typename... _Types>
+template <template <typename...> class Tp, typename... Types>
 class rvalue_ituple {
-    template <typename> struct _TemplatedTrue { static constexpr bool value = true; };
-    template <typename> struct _TemplatedFalse { static constexpr bool value = false; };
-    template <typename _Callable>
-    auto pass ( _Callable&& __callable ) const {
-        return _PassHelperWrapper<_Types...>::pass(std::forward<_Callable>(__callable), tuple);
+    template <typename> struct TemplatedTrue { static constexpr bool value = true; };
+    template <typename> struct TemplatedFalse { static constexpr bool value = false; };
+    template <typename Callable>
+    auto pass ( Callable&& callable ) const {
+        return PassHelperWrapper_<Types...>::pass(std::forward<Callable>(callable), tuple);
     }
-    template <bool... _Const>
-    using tuple_iterator = _ITupleIterator<typename _ITupleHelper<_Tp, _Types...>
-                                         ::template _IteratorHelper<_Const...>
-                                         ::template _Iterator<>::type, _Tp, _Types...>;
+    template <bool... Const>
+    using tuple_iterator = ITupleIterator_<typename ITupleHelper_<Tp, Types...>
+                                         ::template IteratorHelper<Const...>
+                                         ::template Iterator<>::type, Tp, Types...>;
 
 public:
-    using iterator = tuple_iterator<_TemplatedFalse<_Types>::value...>;
-    using const_iterator = tuple_iterator<_TemplatedTrue<_Types>::value...>;
+    using iterator = tuple_iterator<TemplatedFalse<Types>::value...>;
+    using const_iterator = tuple_iterator<TemplatedTrue<Types>::value...>;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-    rvalue_ituple ( _Tp<_Types...>&& tuple ) : tuple(std::forward<_Tp<_Types...>>(tuple)) {
-        if ( !pass ( _ITupleLambdas::__size_all_eq{} ) )
+    rvalue_ituple ( Tp<Types...>&& tuple ) : tuple(std::forward<Tp<Types...>>(tuple)) {
+        if ( !pass ( _ituple_lambdas::size_all_eq{} ) )
             throw std::invalid_argument{"rvalue ituple: non-matching sizes"};
     }
-    std::size_t size() const { return pass ( _ITupleLambdas::__size_get{} ); }
+    std::size_t size() const { return pass ( _ituple_lambdas::size_get{} ); }
 
-    template <std::nullptr_t, bool... _Const>
-    tuple_iterator<_Const...> begin() { return pass ( _ITupleLambdas::__begin<tuple_iterator<_Const...>>{} ); }
-    template <std::nullptr_t, bool... _Const>
-    tuple_iterator<_Const...> end() { return pass ( _ITupleLambdas::__end<tuple_iterator<_Const...>>{} ); }
-    template <std::nullptr_t, bool... _Const>
-    std::reverse_iterator<tuple_iterator<_Const...>> rbegin() { return pass ( _ITupleLambdas::__rbegin<tuple_iterator<_Const...>>{} ); }
-    template <std::nullptr_t, bool... _Const>
-    std::reverse_iterator<tuple_iterator<_Const...>> rend() { return pass ( _ITupleLambdas::__rend<tuple_iterator<_Const...>>{} ); }
+    template <std::nullptr_t, bool... Const>
+    tuple_iterator<Const...> begin() { return pass ( _ituple_lambdas::begin<tuple_iterator<Const...>>{} ); }
+    template <std::nullptr_t, bool... Const>
+    tuple_iterator<Const...> end() { return pass ( _ituple_lambdas::end<tuple_iterator<Const...>>{} ); }
+    template <std::nullptr_t, bool... Const>
+    std::reverse_iterator<tuple_iterator<Const...>> rbegin() { return pass ( _ituple_lambdas::rbegin<tuple_iterator<Const...>>{} ); }
+    template <std::nullptr_t, bool... Const>
+    std::reverse_iterator<tuple_iterator<Const...>> rend() { return pass ( _ituple_lambdas::rend<tuple_iterator<Const...>>{} ); }
 
-    iterator begin() { return begin<nullptr, _TemplatedFalse<_Types>::value...>(); }
-    iterator end() { return end<nullptr, _TemplatedFalse<_Types>::value...>(); }
-    reverse_iterator rbegin() { return rbegin<nullptr, _TemplatedFalse<_Types>::value...>(); }
-    reverse_iterator rend() { return rend<nullptr, _TemplatedFalse<_Types>::value...>(); }
+    iterator begin() { return begin<nullptr, TemplatedFalse<Types>::value...>(); }
+    iterator end() { return end<nullptr, TemplatedFalse<Types>::value...>(); }
+    reverse_iterator rbegin() { return rbegin<nullptr, TemplatedFalse<Types>::value...>(); }
+    reverse_iterator rend() { return rend<nullptr, TemplatedFalse<Types>::value...>(); }
 
     const_iterator begin() const {
-        return const_cast<rvalue_ituple*>(this)->begin<nullptr, _TemplatedTrue<_Types>::value...>();
+        return const_cast<rvalue_ituple*>(this)->begin<nullptr, TemplatedTrue<Types>::value...>();
     }
     const_iterator end() const {
-        return const_cast<rvalue_ituple*>(this)->end<nullptr, _TemplatedTrue<_Types>::value...>();
+        return const_cast<rvalue_ituple*>(this)->end<nullptr, TemplatedTrue<Types>::value...>();
     }
     const_reverse_iterator rbegin() const {
-        return const_cast<rvalue_ituple*>(this)->rbegin<nullptr, _TemplatedTrue<_Types>::value...>();
+        return const_cast<rvalue_ituple*>(this)->rbegin<nullptr, TemplatedTrue<Types>::value...>();
     }
     const_reverse_iterator rend() const {
-        return const_cast<rvalue_ituple*>(this)->rend<nullptr, _TemplatedTrue<_Types>::value...>();
+        return const_cast<rvalue_ituple*>(this)->rend<nullptr, TemplatedTrue<Types>::value...>();
     }
 
     const_iterator cbegin() const { return begin(); }
@@ -382,49 +382,49 @@ public:
     const_reverse_iterator crend() const { return rend(); }
 
 private:
-    _Tp<_Types...> tuple;
+    Tp<Types...> tuple;
 };
 
-template <template <typename...> class _Tp, typename... _Types>
-ituple<_Tp, _Types...> to_ituple ( _Tp<_Types...>& tuple ) { return tuple; }
-template <template <typename...> class _Tp, typename... _Types>
-const_ituple<_Tp, _Types...> to_ituple ( const _Tp<_Types...>& tuple ) { return tuple; }
-template <template <typename...> class _Tp, typename... _Types>
-rvalue_ituple<_Tp, _Types...> to_ituple ( _Tp<_Types...>&& tuple ) { return std::forward<_Tp<_Types...>>(tuple); }
+template <template <typename...> class Tp, typename... Types>
+ituple<Tp, Types...> to_ituple ( Tp<Types...>& tuple ) { return tuple; }
+template <template <typename...> class Tp, typename... Types>
+const_ituple<Tp, Types...> to_ituple ( const Tp<Types...>& tuple ) { return tuple; }
+template <template <typename...> class Tp, typename... Types>
+rvalue_ituple<Tp, Types...> to_ituple ( Tp<Types...>&& tuple ) { return std::forward<Tp<Types...>>(tuple); }
 
-template <typename _Tp1, typename _Tp2>
-std::pair<_Tp1&&, _Tp2&&> forward_as_pair ( _Tp1&& a, _Tp2&& b ) {
-    return {std::forward<_Tp1>(a), std::forward<_Tp2>(b)};
+template <typename Tp1, typename Tp2>
+std::pair<Tp1&&, Tp2&&> forward_as_pair ( Tp1&& a, Tp2&& b ) {
+    return {std::forward<Tp1>(a), std::forward<Tp2>(b)};
 }
-template <typename _Tp1, typename _Tp2>
-rvalue_ituple<std::pair, _Tp1&&, _Tp2&&> forward_as_ipair ( _Tp1&& a, _Tp2&& b ) {
-    return forward_as_pair(std::forward<_Tp1>(a), std::forward<_Tp2>(b));
+template <typename Tp1, typename Tp2>
+rvalue_ituple<std::pair, Tp1&&, Tp2&&> forward_as_ipair ( Tp1&& a, Tp2&& b ) {
+    return forward_as_pair(std::forward<Tp1>(a), std::forward<Tp2>(b));
 }
-template <typename... _Types>
-rvalue_ituple<std::tuple, _Types&&...> forward_as_ituple ( _Types&&... __args ) {
-    return std::forward_as_tuple(std::forward<_Types>(__args)...);
+template <typename... Types>
+rvalue_ituple<std::tuple, Types&&...> forward_as_ituple ( Types&&... args ) {
+    return std::forward_as_tuple(std::forward<Types>(args)...);
 }
 
-template <template <typename...> class _Tp, typename... _Types>
-struct ctuple : _Tp<_Types...> {
-    template <typename... _Args>
-    ctuple ( _Args&&... __args ) : _Tp<_Types...>(std::forward<_Args>(__args)...) {}
-    template <typename _Res>
-    struct __construct {
-        template <typename... _Args>
-        _Res operator() ( _Args&&... __args ) { return _Res{std::forward<_Args>(__args)...}; }
+template <template <typename...> class Tp, typename... Types>
+struct ctuple : Tp<Types...> {
+    template <typename... Args>
+    ctuple ( Args&&... args ) : Tp<Types...>(std::forward<Args>(args)...) {}
+    template <typename Res>
+    struct construct {
+        template <typename... Args>
+        Res operator() ( Args&&... args ) { return Res{std::forward<Args>(args)...}; }
     };
-    template <typename _Res>
-    operator _Res() && { return _PassHelperWrapper<_Types...>::pass(__construct<_Res>{}, std::move(*this)); }
+    template <typename Res>
+    operator Res() && { return PassHelperWrapper_<Types...>::pass(construct<Res>{}, std::move(*this)); }
 };
-template <template <typename...> class _Tp, typename... _Types>
-ctuple<_Tp, _Types...> to_ctuple ( _Tp<_Types...>&& tuple ) { return std::forward<_Tp<_Types...>>(tuple); }
+template <template <typename...> class Tp, typename... Types>
+ctuple<Tp, Types...> to_ctuple ( Tp<Types...>&& tuple ) { return std::forward<Tp<Types...>>(tuple); }
 }
 
 #define foreach2(I, A, B) for ( auto&& I: non_std::forward_as_ipair(A, B) )
-#define foreach__(I, ...) for ( auto&& I: non_std::forward_as_ituple(__VA_ARGS__) )
-#define foreach(A, ...) for ( auto&& __foreach_iterator: non_std::forward_as_ituple(__VA_ARGS__) ) \
-    for ( bool __foreach_guard = true; __foreach_guard; ) for ( A = non_std::to_ctuple( \
-        std::move(__foreach_iterator) ); __foreach_guard; __foreach_guard = false )
+#define foreach(I, ...) for ( auto&& I: non_std::forward_as_ituple(VA_ARGS) )
+#define foreach(A, ...) for ( auto&& foreach_iterator: non_std::forward_as_ituple(VA_ARGS) ) \
+    for ( bool _foreach_guard = true; _foreach_guard; ) for ( A = non_std::to_ctuple( \
+        std::move(foreach_iterator) ); _foreach_guard; _foreach_guard = false )
 
 #endif // NON_STD_ITUPLE
