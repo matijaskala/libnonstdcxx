@@ -60,16 +60,13 @@ set(LIBNONSTDCXX_HEADERS ${LIBNONSTDCXX_HEADERS}
     cxxabi
     file
     funcid
-    improved_istream
     power
     runtime_cast
-    stdio_sync_filebuf
     tupleid
     twoway_vector
 )
 add_library(nonstdc++-extra SHARED
     cxxabi.cpp
-    improved_istream.cpp
 )
 target_compile_features(nonstdc++-extra
     INTERFACE cxx_attributes cxx_inheriting_constructors cxx_variadic_templates)
