@@ -28,6 +28,10 @@ template<> struct is_char<char> { using value_type = bool; static constexpr valu
                                   constexpr operator value_type() { return value; } };
 template<> struct is_char<wchar_t> { using value_type = bool; static constexpr value_type value = true;
                                      constexpr operator value_type() { return value; } };
+#if __cplusplus >= 202002L || defined __cpp_char8_t && __cpp_char8_t >= 201811L
+template<> struct is_char<char8_t> { using value_type = bool; static constexpr value_type value = true;
+                                      constexpr operator value_type() { return value; } };
+#endif
 template<> struct is_char<char16_t> { using value_type = bool; static constexpr value_type value = true;
                                       constexpr operator value_type() { return value; } };
 template<> struct is_char<char32_t> { using value_type = bool; static constexpr value_type value = true;
@@ -36,26 +40,33 @@ template<typename T> struct is_string { using value_type = bool; static constexp
                                         constexpr operator value_type() { return value; } };
 template<typename C> struct is_string<std::basic_string<C>> : is_char<C> {};
 
-template<typename,int=0> struct __remove_everything_1;
-template<typename,int=0> struct __remove_everything_2;
-template<typename T> struct __remove_everything_1<T,2> { using type = T; };
-template<typename T> struct __remove_everything_2<T,2> { using type = T; };
-template<typename T, int __internal> struct __remove_everything_1 : __remove_everything_2<T,__internal+1> {};
-template<typename T, int __internal> struct __remove_everything_1<T*,__internal> : __remove_everything_2<T> {};
-template<typename T, int __internal> struct __remove_everything_1<T&,__internal> : __remove_everything_2<T> {};
-template<typename T, int __internal> struct __remove_everything_1<T&&,__internal> : __remove_everything_2<T> {};
-template<typename T, int __internal> struct __remove_everything_1<T[],__internal> : __remove_everything_2<T> {};
-template<typename T, int __internal> struct __remove_everything_2 : __remove_everything_1<T,__internal+1> {};
-template<typename T, int __internal> struct __remove_everything_2<T const,__internal> : __remove_everything_1<T> {};
-template<typename T, int __internal> struct __remove_everything_2<T volatile,__internal> : __remove_everything_1<T> {};
-template<typename T, int __internal> struct __remove_everything_2<T const volatile,__internal> : __remove_everything_1<T> {};
-template<typename T, int __internal, std::size_t size> struct __remove_everything_1<T[size],__internal> : __remove_everything_1<T> {};
+template<typename Type>
+struct remove_everything {
+private:
+    template<typename,int> struct remove_everything_1;
+    template<typename,int> struct remove_everything_2;
+    template<typename T> struct remove_everything_1<T,2> { using type = T; };
+    template<typename T> struct remove_everything_2<T,2> { using type = T; };
+    template<typename T, int internal> struct remove_everything_1 : remove_everything_2<T,internal+1> {};
+    template<typename T, int internal> struct remove_everything_1<T*,internal> : remove_everything_2<T,0> {};
+    template<typename T, int internal> struct remove_everything_1<T&,internal> : remove_everything_2<T,0> {};
+    template<typename T, int internal> struct remove_everything_1<T&&,internal> : remove_everything_2<T,0> {};
+    template<typename T, int internal> struct remove_everything_1<T[],internal> : remove_everything_2<T,0> {};
+    template<typename T, int internal> struct remove_everything_2 : remove_everything_1<T,internal+1> {};
+    template<typename T, int internal> struct remove_everything_2<T const,internal> : remove_everything_1<T,0> {};
+    template<typename T, int internal> struct remove_everything_2<T volatile,internal> : remove_everything_1<T,0> {};
+    template<typename T, int internal> struct remove_everything_2<T const volatile,internal> : remove_everything_1<T,0> {};
+    template<typename T, int internal, std::size_t size> struct remove_everything_1<T[size],internal> : remove_everything_1<T,0> {};
 
-template<typename T> struct remove_everything { using type = typename __remove_everything_1<T>::type; };
-template<typename T> using remove_everything_t = typename remove_everything<T>::type;
+public:
+    using type = typename remove_everything_1<Type,0>::type;
+};
+template<typename Type>
+using remove_everything_t = typename remove_everything<Type>::type;
 }
 
-#define __classof__(object) non_std::remove_everything_t<decltype(object)>
-#define this_t __classof__(this)
+#define CLASSOF(object) ::non_std::remove_everything_t<decltype(object)>
+#define __classof__(object) ::non_std::remove_everything_t<decltype(object)>
+#define this_t CLASSOF(this)
 
 #endif // NON_STD_TRAITS

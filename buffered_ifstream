@@ -25,53 +25,53 @@
 namespace non_std
 {
 
-template< typename _CharT, typename _Traits = std::char_traits<_CharT> >
+template< typename CharT, typename Traits = std::char_traits<CharT> >
 class basic_buffered_ifstream;
 
 using buffered_ifstream = basic_buffered_ifstream<char>;
 
-template< typename _CharT, typename _Traits >
+template< typename CharT, typename Traits >
 class basic_buffered_ifstream
 {
 public:
     basic_buffered_ifstream ( std::string file )
-        : _M_stream ( file ) {
+        : m_stream ( file ) {
     }
 
-    typename _Traits::int_type get() {
-        _M_fill_buffer();
-        if ( _M_eof )
-            return _Traits::eof();
+    typename Traits::int_type get() {
+        m_fill_buffer();
+        if ( m_eof )
+            return Traits::eof();
         else
-            return _Traits::to_int_type ( _M_buffer[_M_offset++] );
+            return Traits::to_int_type ( m_buffer[m_offset++] );
     }
 
-    typename _Traits::int_type peek() {
-        _M_fill_buffer();
-        if ( _M_eof )
-            return _Traits::eof();
+    typename Traits::int_type peek() {
+        m_fill_buffer();
+        if ( m_eof )
+            return Traits::eof();
         else
-            return _Traits::to_int_type ( _M_buffer[_M_offset] );
+            return Traits::to_int_type ( m_buffer[m_offset] );
     }
 
-    bool is_open() { return _M_stream.is_open(); }
+    bool is_open() { return m_stream.is_open(); }
 
-    std::basic_istream<_CharT, _Traits>& stream() { return _M_stream; }
+    std::basic_istream<CharT, Traits>& stream() { return m_stream; }
 
 private:
-    std::basic_ifstream<_CharT, _Traits> _M_stream;
-    _CharT _M_buffer[0x800];
-    std::uint32_t _M_buffer_size = 0;
-    std::uint32_t _M_offset = 0;
-    bool _M_eof = false;
-    void _M_fill_buffer() {
-        if ( _M_offset >= _M_buffer_size ) {
-            if ( _M_stream.rdbuf()->sgetc() == _Traits::eof() ) {
-                _M_eof = true;
+    std::basic_ifstream<CharT, Traits> m_stream;
+    CharT m_buffer[0x800];
+    std::uint32_t m_buffer_size = 0;
+    std::uint32_t m_offset = 0;
+    bool m_eof = false;
+    void m_fill_buffer() {
+        if ( m_offset >= m_buffer_size ) {
+            if ( m_stream.rdbuf()->sgetc() == Traits::eof() ) {
+                m_eof = true;
             }
             else {
-                _M_offset = 0;
-                _M_buffer_size = _M_stream.readsome ( _M_buffer, sizeof ( _M_buffer ) );
+                m_offset = 0;
+                m_buffer_size = m_stream.readsome ( m_buffer, sizeof ( m_buffer ) );
             }
         }
     }

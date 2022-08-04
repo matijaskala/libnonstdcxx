@@ -36,8 +36,8 @@ constexpr auto inverse_element(std::multiplies<Tp>) -> Tp(*)(const Tp&) { return
 template <typename Tp>
 constexpr Tp identity_element(std::multiplies<Tp>) { return Tp(1); }
 
-template <typename Tp, typename _Int, typename _Op = std::multiplies<Tp>>
-constexpr Tp power(Tp x, _Int n, _Op op = {}) {
+template <typename Tp, typename Int, typename Op = std::multiplies<Tp>>
+constexpr Tp power(Tp x, Int n, Op op = {}) {
     switch (n) {
         case 0:
             return identity_element(op);

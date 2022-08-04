@@ -27,11 +27,11 @@ struct func_info {
     non_std::tuple_index return_type;
 };
 
-template <typename ReturnType, typename... _Args>
-func_info _funcid(ReturnType(*_func)(_Args...)) { return {static_typeid<_Args...>(),static_typeid<ReturnType>()}; }
+template <typename ReturnType, typename... Args>
+func_info _funcid(ReturnType(*_func)(Args...)) { return {static_typeid<Args...>(),static_typeid<ReturnType>()}; }
 
-template <typename ReturnType, typename _Class, typename... _Args>
-func_info _funcid(ReturnType(_Class::*_func)(_Args...)) { return {static_typeid<_Args...>(),static_typeid<ReturnType>()}; }
+template <typename ReturnType, typename Class, typename... Args>
+func_info _funcid(ReturnType(Class::*_func)(Args...)) { return {static_typeid<Args...>(),static_typeid<ReturnType>()}; }
 
 #define funcid(FUNC) _funcid(&FUNC)
 #define func_name(FUNC) (#FUNC + ( "(" + funcid(FUNC).args.name() + ")" ) )

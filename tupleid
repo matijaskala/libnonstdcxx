@@ -38,19 +38,19 @@ namespace non_std
 {
 
 struct tuple_index {
-    bool operator== ( const tuple_index& __rhs ) const {
-        if ( m_count != __rhs.m_count )
+    bool operator== ( const tuple_index& rhs ) const {
+        if ( m_count != rhs.m_count )
             return false;
         for ( std::size_t i = 0; i < m_count; i++ )
-            if ( !(*m_data.get()[i] == *__rhs.m_data.get()[i]) )
+            if ( !(*m_data.get()[i] == *rhs.m_data.get()[i]) )
                 return false;
         return true;
     }
-    bool operator!= ( const tuple_index& __rhs ) const {
-        if ( m_count != __rhs.m_count )
+    bool operator!= ( const tuple_index& rhs ) const {
+        if ( m_count != rhs.m_count )
             return true;
         for ( std::size_t i = 0; i < m_count; i++ )
-            if ( *m_data.get()[i] != *__rhs.m_data.get()[i] )
+            if ( *m_data.get()[i] != *rhs.m_data.get()[i] )
                 return true;
         return false;
     }
@@ -106,11 +106,11 @@ struct hash<non_std::tuple_index>
 };
 }
 
-template <typename Tp, std::size_t __i = std::tuple_size<Tp>{}>
+template <typename Tp, std::size_t i = std::tuple_size<Tp>{}>
 struct StaticTupleIdHelper_ {
     static void get ( const std::type_info** data ) {
-        data[__i - 1] = &typeid(typename std::tuple_element<__i - 1, Tp>::type);
-        StaticTupleIdHelper_<Tp, __i - 1>::get(data);
+        data[i - 1] = &typeid(typename std::tuple_element<i - 1, Tp>::type);
+        StaticTupleIdHelper_<Tp, i - 1>::get(data);
     }
 };
 
@@ -136,11 +136,11 @@ auto static_typeid () -> non_std::tuple_index {
     return static_tupleid<std::tuple<Types...>>();
 }
 
-template <typename Tp, std::size_t __i = std::tuple_size<Tp>{}>
+template <typename Tp, std::size_t i = std::tuple_size<Tp>{}>
 struct DynamicTupleIdHelper_ {
     static void get ( const std::type_info** data, const Tp& tuple ) {
-        data[__i - 1] = &typeid(std::get<__i - 1> ( tuple ));
-        DynamicTupleIdHelper_<Tp, __i - 1>::get(data, tuple);
+        data[i - 1] = &typeid(std::get<i - 1> ( tuple ));
+        DynamicTupleIdHelper_<Tp, i - 1>::get(data, tuple);
     }
 };
 
@@ -150,15 +150,15 @@ struct DynamicTupleIdHelper_<Tp, 0> {
 };
 
 template <typename Tp>
-auto dynamic_tupleid ( const Tp& __tp ) -> non_std::tuple_index {
+auto dynamic_tupleid ( const Tp& tp ) -> non_std::tuple_index {
     non_std::tuple_index index{std::tuple_size<Tp>{}};
-    DynamicTupleIdHelper_<Tp>::get(index.m_data.get(), __tp);
+    DynamicTupleIdHelper_<Tp>::get(index.m_data.get(), tp);
     return index;
 }
 
 template <typename... Types>
-auto dynamic_typeid ( Types&&... __types ) -> non_std::tuple_index {
-    return dynamic_tupleid(std::forward_as_tuple(std::forward<Types>(__types)...));
+auto dynamic_typeid ( Types&&... types ) -> non_std::tuple_index {
+    return dynamic_tupleid(std::forward_as_tuple(std::forward<Types>(types)...));
 }
 
 #endif // TUPLEID
