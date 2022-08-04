@@ -61,7 +61,6 @@ set(LIBNONSTDCXX_HEADERS ${LIBNONSTDCXX_HEADERS}
     file
     funcid
     power
-    runtime_cast
     tupleid
     twoway_vector
 )
