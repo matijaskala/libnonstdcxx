@@ -1,6 +1,6 @@
 /*
  * Typesafe callback system
- * Copyright (C) 2014  Matija Skala <mskala@gmx.com>
+ * Copyright (C) 2014-2022 Matija Skala <mskala@gmx.com>
  *
  * This library is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
 #define NON_STD_SIGNAL
 
 #include <functional>
-#include <list>
+#include <forward_list>
 #include <mutex>
 
 namespace non_std
@@ -35,7 +35,7 @@ class slot
 {
     friend class signal<Args...>;
     std::function<void(Args...)> m_func;
-    std::list<signal<Args...>*> m_signals;
+    std::forward_list<signal<Args...>*> m_signals;
     void* m_data{nullptr};
     std::mutex m_mutex;
 
@@ -72,7 +72,7 @@ template< typename... Args >
 class signal : public slot<Args...>
 {
     friend class slot<Args...>;
-    std::list<slot<Args...>*> m_slots;
+    std::forward_list<slot<Args...>*> m_slots;
 
 public:
     signal ( void* data );
@@ -81,7 +81,7 @@ public:
     void connect ( Object* receiver, Slot&& slot ) { connect ( receiver->template non_std_slot<Args...> ( std::forward<Slot> ( slot ) ) ); }
     template< typename Object, typename Slot >
     void disconnect ( Object* receiver, Slot&& slot ) { disconnect ( receiver->template non_std_slot<Args...> ( std::forward<Slot> ( slot ) ) ); }
-    void connect ( slot<Args...>& slot ) { m_slots.push_back ( &slot ); slot.m_signals.push_front ( this ); }
+    void connect ( slot<Args...>& slot ) { m_slots.push_front ( &slot ); slot.m_signals.push_front ( this ); }
     void disconnect ( slot<Args...>& slot ) { m_slots.remove ( &slot ); slot.m_signals.remove ( this ); }
 };
 
