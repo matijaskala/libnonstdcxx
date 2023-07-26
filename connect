@@ -20,7 +20,11 @@
 #include "object"
 #include "traits"
 
-#define NON_STD_CONNECT(sender,signal,receiver,slot) \
-    (sender)->signal.connect ( receiver, &CLASSOF(receiver)::slot )
-#define NON_STD_DISCONNECT(sender,signal,receiver,slot) \
-    (sender)->signal.disconnect ( receiver, &CLASSOF(receiver)::slot )
+#define NON_STD_CONNECT3(signal,receiver,slot) \
+    (signal).connect ( receiver, &CLASSOF(receiver)::slot )
+#define NON_STD_DISCONNECT3(signal,receiver,slot) \
+    (signal).disconnect ( receiver, &CLASSOF(receiver)::slot )
+#define NON_STD_CONNECT4(sender,signal,receiver,slot) \
+    NON_STD_CONNECT3((sender)->signal, receiver, slot )
+#define NON_STD_DISCONNECT4(sender,signal,receiver,slot) \
+    NON_STD_DISCONNECT3((sender)->signal, receiver, slot )
