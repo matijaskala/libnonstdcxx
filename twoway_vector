@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TWOWAY_VECTOR_H
-#define TWOWAY_VECTOR_H
+#ifndef NON_STD_TWOWAY_VECTOR
+#define NON_STD_TWOWAY_VECTOR
 
 #include <algorithm>
 #include <memory>
@@ -538,4 +538,4 @@ private:
 };
 }
 
-#endif // TWOWAY_VECTOR_H
+#endif // NON_STD_TWOWAY_VECTOR

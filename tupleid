@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef TUPLEID
-#define TUPLEID
+#ifndef NON_STD_TUPLEID
+#define NON_STD_TUPLEID
 
 #include <memory>
 #if defined __GNUC__ || defined __clang__
@@ -161,4 +161,4 @@ auto dynamic_typeid ( Types&&... types ) -> non_std::tuple_index {
     return dynamic_tupleid(std::forward_as_tuple(std::forward<Types>(types)...));
 }
 
-#endif // TUPLEID
+#endif // NON_STD_TUPLEID
