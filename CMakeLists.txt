@@ -1,6 +1,6 @@
-project(libnonstdc++)
-
 cmake_minimum_required(VERSION 2.8.12)
+
+project(libnonstdc++)
 
 find_package(ECM 1.3.0 REQUIRED NO_MODULE)
 
