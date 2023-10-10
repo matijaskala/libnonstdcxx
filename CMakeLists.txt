@@ -59,6 +59,7 @@ set(LIBNONSTDCXX_HEADERS ${LIBNONSTDCXX_HEADERS}
     cxxabi
     file
     funcid
+    matrix
     power
     tupleid
     twoway_vector
