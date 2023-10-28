@@ -24,7 +24,6 @@ set(LIBNONSTDCXX_HEADERS
 
     directory
     dl
-    ituple
     lexical_cast
     nullref
     traits
