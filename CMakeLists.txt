@@ -61,7 +61,6 @@ set(LIBNONSTDCXX_HEADERS ${LIBNONSTDCXX_HEADERS}
     matrix
     power
     tupleid
-    twoway_vector
 )
 add_library(nonstdc++-extra SHARED
     cxxabi.cpp
