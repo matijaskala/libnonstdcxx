@@ -16,8 +16,6 @@ set(LIBNONSTDCXX_HEADERS
     char32.h
 
     dl
-    lexical_cast
-    traits
 )
 
 add_library(char32 SHARED
