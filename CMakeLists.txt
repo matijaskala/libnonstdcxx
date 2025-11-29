@@ -22,7 +22,6 @@ set(LIBNONSTDCXX_TARGETS char32 nonstdc++)
 set(LIBNONSTDCXX_HEADERS
     char32.h
 
-    directory
     dl
     lexical_cast
     traits
@@ -43,7 +42,6 @@ add_library(char32 SHARED
 )
 
 add_library(nonstdc++ SHARED
-    directory.cpp
     dl.cpp
     xterm.cpp
 )
@@ -55,8 +53,6 @@ set(LIBNONSTDCXX_HEADERS ${LIBNONSTDCXX_HEADERS}
     basic_variant
     buffered_ifstream
     cxxabi
-    file
-    matrix
     power
 )
 add_library(nonstdc++-extra SHARED
