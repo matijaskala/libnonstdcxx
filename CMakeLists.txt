@@ -19,7 +19,6 @@ set(LIBNONSTDCXX_HEADERS
     lexical_cast
     traits
     type_array
-    xterm
 )
 
 add_library(char32 SHARED
@@ -36,7 +35,6 @@ add_library(char32 SHARED
 
 add_library(nonstdc++ SHARED
     dl.cpp
-    xterm.cpp
 )
 target_compile_features(nonstdc++
     PUBLIC cxx_std_17)
