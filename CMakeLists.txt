@@ -18,7 +18,6 @@ set(LIBNONSTDCXX_HEADERS
     dl
     lexical_cast
     traits
-    type_array
 )
 
 add_library(char32 SHARED
