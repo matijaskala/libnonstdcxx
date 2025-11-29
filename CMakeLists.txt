@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.10)
 
 project(libnonstdc++)
 
@@ -25,7 +25,6 @@ set(LIBNONSTDCXX_HEADERS
     directory
     dl
     lexical_cast
-    nullref
     traits
     type_array
     xterm
@@ -57,10 +56,8 @@ set(LIBNONSTDCXX_HEADERS ${LIBNONSTDCXX_HEADERS}
     buffered_ifstream
     cxxabi
     file
-    funcid
     matrix
     power
-    tupleid
 )
 add_library(nonstdc++-extra SHARED
     cxxabi.cpp
