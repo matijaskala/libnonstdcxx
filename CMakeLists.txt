@@ -11,13 +11,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(GNUInstallDirs)
 include(ECMUninstallTarget)
 
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
-    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 5.0 AND NOT NO_EXTRA)
-        message(WARNING "GCC 5 is required to compile libnonstdc++-extra - disabling\nuse -DNO_EXTRA=ON to silence this warning")
-        set(NO_EXTRA ON)
-    endif(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 5.0 AND NOT NO_EXTRA)
-endif(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
-
 set(LIBNONSTDCXX_TARGETS char32 nonstdc++)
 set(LIBNONSTDCXX_HEADERS
     char32.h
